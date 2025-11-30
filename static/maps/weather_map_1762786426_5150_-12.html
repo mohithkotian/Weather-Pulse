@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_dd0a1a35f0255e2d224a97bab0d5f735 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_dd0a1a35f0255e2d224a97bab0d5f735" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_dd0a1a35f0255e2d224a97bab0d5f735 = L.map(
+                "map_dd0a1a35f0255e2d224a97bab0d5f735",
+                {
+                    center: [51.5073219, -0.1276474],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 13,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_fcdab27b3aa1604cc8fa96717caacb54 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_fcdab27b3aa1604cc8fa96717caacb54.addTo(map_dd0a1a35f0255e2d224a97bab0d5f735);
+        
+    
+            var marker_b251b65fc67c7a75112ab0f7319a69e6 = L.marker(
+                [51.5073219, -0.1276474],
+                {
+}
+            ).addTo(map_dd0a1a35f0255e2d224a97bab0d5f735);
+        
+    
+            var div_icon_c93d8ecaa59d3158cae802d1e2613a08 = L.divIcon({
+  "html": "\n                    \u003cdiv style=\u0027background:linear-gradient(135deg,#1e3c72,#4a90e2);color:#fff;border-radius:28px; padding:6px 10px; \n                                font-weight:700; box-shadow:0 4px 12px rgba(0,0,0,0.4);\u0027\u003e\n                        12\u00b0C\n                    \u003c/div\u003e\n                ",
+  "className": "empty",
+});
+        
+    
+        var popup_91b5b421e902f8ec39c197dc70087e66 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_8da5fa8ddf67f4e775589709b6d65597 = $(`<div id="html_8da5fa8ddf67f4e775589709b6d65597" style="width: 100.0%; height: 100.0%;">             <div style="font-family: 'Segoe UI', Arial; background-color: rgba(13, 24, 43, 0.95); color: white;                          padding: 12px; border-radius: 8px; min-width: 220px;">                 <h4 style="margin:0 0 8px 0; color: #4a90e2;">Weather</h4>                 <div><strong>Temp:</strong> <span style="float:right">12.18°C</span></div>                 <div><strong>Cond:</strong> <span style="float:right">Few Clouds</span></div>                 <div><strong>Wind:</strong> <span style="float:right">3.6 m/s</span></div>                 <div><strong>Humidity:</strong> <span style="float:right">91%</span></div>             </div>             </div>`)[0];
+                popup_91b5b421e902f8ec39c197dc70087e66.setContent(html_8da5fa8ddf67f4e775589709b6d65597);
+            
+        
+
+        marker_b251b65fc67c7a75112ab0f7319a69e6.bindPopup(popup_91b5b421e902f8ec39c197dc70087e66)
+        ;
+
+        
+    
+    
+                marker_b251b65fc67c7a75112ab0f7319a69e6.setIcon(div_icon_c93d8ecaa59d3158cae802d1e2613a08);
+            
+    
+            var circle_bccb1ab241dd0888328527a04f591a65 = L.circle(
+                [51.5073219, -0.1276474],
+                {"bubblingMouseEvents": true, "color": "#4a90e2", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#4a90e2", "fillOpacity": 0.07, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 1000, "stroke": true, "weight": 3}
+            ).addTo(map_dd0a1a35f0255e2d224a97bab0d5f735);
+        
+</script>
+</html>

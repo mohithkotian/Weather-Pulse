@@ -1,0 +1,230 @@
+l{% extends "base.html" %}
+
+{% block title %}Interactive Weather Map - Weather Intelligence{% endblock %}
+
+{% block extra_css %}
+<style>
+#map {
+    height: 600px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.map-controls {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.control-group {
+    margin-bottom: 1rem;
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.search-container {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-container input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.layer-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.layer-btn {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.layer-btn:hover {
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.layer-btn.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+#weatherInfo {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.weather-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.weather-main img {
+    width: 80px;
+    height: 80px;
+}
+
+.temp {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.condition {
+    color: #7f8c8d;
+    text-transform: capitalize;
+}
+
+.weather-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.label {
+    color: #7f8c8d;
+}
+
+.value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+#errorMessage {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid #dc3545;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-page-container">
+    <div class="page-header">
+        <h1>🗺️ Interactive Weather Map</h1>
+        <p>Explore real-time weather conditions with interactive map layers</p>
+    </div>
+    
+    <div class="map-controls">
+        <!-- Search Control -->
+        <div class="control-group">
+            <label>🔍 Search Location</label>
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="citySearch" 
+                    placeholder="Enter city name (e.g., London, Tokyo, New York)"
+                >
+                <button id="searchBtn" class="btn btn-primary">Search</button>
+                <button id="myLocationBtn" class="btn btn-primary">📍 My Location</button>
+            </div>
+        </div>
+        
+        <!-- Layer Control -->
+        <div class="control-group">
+            <label>🌈 Weather Layers</label>
+            <div class="layer-buttons">
+                <button class="layer-btn" data-layer="temperature">🌡️ Temperature</button>
+                <button class="layer-btn" data-layer="precipitation">🌧️ Precipitation</button>
+                <button class="layer-btn" data-layer="wind">💨 Wind</button>
+                <button class="layer-btn" data-layer="clouds">☁️ Clouds</button>
+                <button class="layer-btn" data-layer="pressure">📊 Pressure</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div id="map"></div>
+    
+    <!-- Weather Info Panel -->
+    <div id="weatherInfo" style="display: none;"></div>
+    
+    <!-- Error Message -->
+    <div id="errorMessage" style="display: none;"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load API keys and initialize map
+fetch('/api/config')
+    .then(response => response.json())
+    .then(config => {
+        // Load Google Maps API
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    })
+    .catch(error => {
+        console.error('Error loading config:', error);
+        document.getElementById('errorMessage').textContent = 'Failed to load map configuration';
+        document.getElementById('errorMessage').style.display = 'block';
+    });
+</script>
+<script src="{{ url_for('static', filename='js/maps/map_layers.js') }}"></script>
+{% endblock %}

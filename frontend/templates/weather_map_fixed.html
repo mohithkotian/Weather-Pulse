@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightning & Thunder Map - Real-time Weather</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+
+        /* Fullscreen Map */
+        #map {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Dark map tiles - Windy style */
+        .leaflet-tile-pane {
+            filter: grayscale(100%) brightness(0.4) contrast(1.2);
+        }
+
+        /* Canvas overlays */
+        #particle-canvas, #thunder-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #particle-canvas { z-index: 2; }
+        #thunder-canvas { z-index: 3; }
+
+        /* Search Bar */
+        .search-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .search-input {
+            padding: 12px 20px;
+            background: rgba(55, 65, 81, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            width: 350px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: rgba(59, 130, 246, 0.8);
+        }
+
+        .search-btn {
+            padding: 12px 24px;
+            background: rgba(59, 130, 246, 0.9);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-btn:hover {
+            background: rgba(96, 165, 250, 1);
+        }
+
+        /* Alert Banner */
+        .alert-banner {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.98), rgba(220, 38, 38, 0.98));
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            animation: alertPulse 2s infinite;
+            max-width: 600px;
+        }
+
+        .alert-banner.show {
+            display: flex;
+        }
+
+        .alert-icon {
+            font-size: 32px;
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6); }
+            50% { box-shadow: 0 8px 48px rgba(239, 68, 68, 0.9); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+        }
+
+        /* Safe Conditions Card */
+        .safe-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            display: none;
+        }
+
+        .safe-card.show {
+            display: block;
+        }
+
+        .safe-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .safe-card h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        /* Controls Panel */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .control-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .model-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .model-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(55, 65, 81, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            border-radius: 6px;
+            color: #d1d5db;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .model-btn.active {
+            background: rgba(59, 130, 246, 0.9);
+            border-color: rgba(96, 165, 250, 1);
+            color: #ffffff;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.9);
+            border: none;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(96, 165, 250, 1);
+        }
+
+        /* Legend */
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
+        .legend-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .color-scale {
+            height: 20px;
+            border-radius: 4px;
+            background: linear-gradient(to right, 
+                #3b82f6 0%, 
+                #10b981 25%, 
+                #fbbf24 50%, 
+                #f97316 75%, 
+                #ef4444 100%);
+            margin-bottom: 8px;
+        }
+
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #d1d5db;
+            margin-bottom: 8px;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Lightning markers */
+        .lightning-marker {
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .lightning-icon {
+            font-size: 28px;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+            animation: lightningPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes lightningPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        /* Popup styling */
+        .leaflet-popup-content-wrapper {
+            background: rgba(30, 30, 30, 0.95);
+            color: #ffffff;
+            border-radius: 8px;
+        }
+
+        .popup-content {
+            padding: 12px;
+        }
+
+        .popup-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #fbbf24;
+        }
+
+        .popup-info {
+            font-size: 13px;
+            color: #d1d5db;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Canvas Layers -->
+    <canvas id="particle-canvas"></canvas>
+    <canvas id="thunder-canvas"></canvas>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" class="search-input" id="search-input" placeholder="Search location (e.g., Singapore, London, Miami)...">
+        <button class="search-btn" id="search-btn">Search</button>
+    </div>
+
+    <!-- Alert Banner -->
+    <div class="alert-banner" id="alert-banner">
+        <span class="alert-icon">⚡</span>
+        <div>
+            <div style="font-size: 18px; font-weight: 700;">⚠️ LIGHTNING ALERT</div>
+            <div id="alert-message" style="font-size: 14px; margin-top: 4px;"></div>
+        </div>
+    </div>
+
+    <!-- Safe Conditions Card -->
+    <div class="safe-card" id="safe-card">
+        <div class="safe-icon">✓</div>
+        <h2>Safe Conditions</h2>
+        <p>No recent lightning activity detected in this area.</p>
+        <p style="margin-top: 8px; font-size: 14px; opacity: 0.9;">The sky is clear - safe conditions</p>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls">
+        <label class="control-label">Weather Model</label>
+        <div class="model-buttons">
+            <button class="model-btn active" data-model="ECMWF">ECMWF</button>
+            <button class="model-btn" data-model="GFS">GFS</button>
+            <button class="model-btn" data-model="ICON">ICON</button>
+        </div>
+        <button class="refresh-btn" id="refresh-btn">🔄 Refresh Data</button>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-title">Rain & Thunder</div>
+        <div class="color-scale"></div>
+        <div class="scale-labels">
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
+        </div>
+        <div class="legend-item">
+            <span style="font-size: 18px;">⚡</span>
+            <span>Lightning Strike</span>
+        </div>
+        <div class="legend-item">
+            <span style="font-size: 18px; color: #ef4444;">🔴</span>
+            <span>High Activity</span>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet MarkerCluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <script>
+        // Configuration
+const OPENWEATHER_API_KEY = 'your_key_here';
+        const TOMORROW_API_KEY = 'Q5comtfrYeC3HZcssHEIQyrK5O69psf3';
+
+        // Global state
+        let map = null;
+        let markerCluster = null;
+        let lightningMarkers = [];
+        let particles = [];
+        let particleCtx = null;
+        let thunderCtx = null;
+        let currentModel = 'ECMWF';
+        let currentLocation = { lat: 20, lon: 0 };
+        let animationFrame = null;
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            initCanvases();
+            initControls();
+            loadWeatherData();
+        });
+
+        // Initialize Leaflet Map
+        function initMap() {
+            map = L.map('map', {
+                center: [20, 0],
+                zoom: 3,
+                zoomControl: true,
+                attributionControl: false
+            });
+
+            // OpenStreetMap tiles - NO GOOGLE MAPS
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: ''
+            }).addTo(map);
+
+            // Initialize marker cluster
+            markerCluster = L.markerClusterGroup({
+                maxClusterRadius: 50,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    return L.divIcon({
+                        html: `<div style="background:rgba(251,191,36,0.9);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#1f2937;font-size:14px;">${count}</div>`,
+                        className: 'marker-cluster',
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            });
+            map.addLayer(markerCluster);
+
+            console.log('✅ Map initialized with OpenStreetMap');
+        }
+
+        // Initialize Canvas Overlays
+        function initCanvases() {
+            const particleCanvas = document.getElementById('particle-canvas');
+            const thunderCanvas = document.getElementById('thunder-canvas');
+            
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+            thunderCanvas.width = window.innerWidth;
+            thunderCanvas.height = window.innerHeight;
+            
+            particleCtx = particleCanvas.getContext('2d');
+            thunderCtx = thunderCanvas.getContext('2d');
+            
+            window.addEventListener('resize', () => {
+                particleCanvas.width = window.innerWidth;
+                particleCanvas.height = window.innerHeight;
+                thunderCanvas.width = window.innerWidth;
+                thunderCanvas.height = window.innerHeight;
+            });
+
+            console.log('✅ Canvas layers initialized');
+        }
+
+        // Initialize Controls
+        function initControls() {
+            // Model selector
+            document.querySelectorAll('.model-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentModel = btn.dataset.model;
+                    loadWeatherData();
+                });
+            });
+
+            // Search button
+            document.getElementById('search-btn').addEventListener('click', searchLocation);
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchLocation();
+            });
+
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', loadWeatherData);
+
+            console.log('✅ Controls initialized');
+        }
+
+        // Search Location using OpenWeather Geocoding
+        async function searchLocation() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            showLoading();
+
+            try {
+                // Use OpenWeather Geocoding API (NOT Google Maps)
+                const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const location = data[0];
+                    currentLocation = {
+                        lat: location.lat,
+                        lon: location.lon,
+                        name: location.name
+                    };
+
+                    // Fly to location
+                    map.flyTo([currentLocation.lat, currentLocation.lon], 10, {
+                        duration: 1.5
+                    });
+
+                    // Add location marker
+                    L.circleMarker([currentLocation.lat, currentLocation.lon], {
+                        radius: 10,
+                        fillColor: '#3b82f6',
+                        color: '#fff',
+                        weight: 3,
+                        fillOpacity: 0.8
+                    }).addTo(map).bindPopup(`📍 ${currentLocation.name}`).openPopup();
+
+                    console.log('🎯 Location found:', currentLocation.name);
+
+                    // Load weather data for this location
+                    loadWeatherData();
+                } else {
+                    alert('Location not found. Try: "Singapore", "London", "New York"');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                alert('Search failed. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load Weather Data from Backend
+        async function loadWeatherData() {
+            showLoading();
+
+            try {
+                const params = new URLSearchParams({
+                    lat: currentLocation.lat,
+                    lon: currentLocation.lon,
+                    model: currentModel,
+                    dev: 'false'  // Change to 'true' for test data
+                });
+
+                const response = await fetch(`/api/weather/layer?${params}`);
+                const data = await response.json();
+
+                console.log('📡 Weather data received:', data);
+
+                if (data.status === 'ok') {
+                    // Display lightning strikes
+                    if (data.strikes && data.strikes.length > 0) {
+                        displayLightningStrikes(data.strikes);
+                        drawThunderHeatmap(data.strikes);
+                        showAlert(`⚡ ${data.strikes.length} lightning strike(s) detected near ${currentLocation.name || 'this area'}!`);
+                        hideSafeCard();
+                    } else {
+                        clearLightning();
+                        showSafeCard();
+                        hideAlert();
+                    }
+
+                    // Display precipitation particles
+                    if (data.grid && data.grid.length > 0) {
+                        createParticles(data.grid);
+                        animateParticles();
+                    }
+                } else {
+                    console.warn('No weather data available');
+                    showSafeCard();
+                }
+            } catch (error) {
+                console.error('❌ Weather data load error:', error);
+                alert('Failed to load weather data. Check console for details.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display Lightning Strikes as Markers
+        function displayLightningStrikes(strikes) {
+            markerCluster.clearLayers();
+            lightningMarkers = [];
+
+            strikes.forEach(strike => {
+                const icon = L.divIcon({
+                    html: `<div class="lightning-icon">⚡</div>`,
+                    className: 'lightning-marker',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+
+                const marker = L.marker([strike.lat, strike.lon], { icon });
+                
+                const popupContent = `
+                    <div class="popup-content">
+                        <div class="popup-title">⚡ Lightning Strike</div>
+                        <div class="popup-info">📍 Location: ${strike.lat.toFixed(3)}, ${strike.lon.toFixed(3)}</div>
+                        <div class="popup-info">⚡ Intensity: ${strike.intensity}</div>
+                        <div class="popup-info">🕒 Time: ${new Date(strike.time).toLocaleTimeString()}</div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                lightningMarkers.push(marker);
+                markerCluster.addLayer(marker);
+            });
+
+            console.log(`✅ Displayed ${strikes.length} lightning strikes`);
+        }
+
+        // Draw Thunder Heatmap
+        function drawThunderHeatmap(strikes) {
+            thunderCtx.clearRect(0, 0, thunderCtx.canvas.width, thunderCtx.canvas.height);
+            thunderCtx.globalAlpha = 0.4;
+
+            strikes.forEach(strike => {
+                const latLng = L.latLng(strike.lat, strike.lon);
+                const pixel = map.latLngToContainerPoint(latLng);
+
+                const gradient = thunderCtx.createRadialGradient(pixel.x, pixel.y, 0, pixel.x, pixel.y, 100);
+                
+                // Color based on intensity
+                let color = 'rgba(251, 191, 36, 0.6)'; // yellow default
+                if (strike.intensity === 'extreme') color = 'rgba(239, 68, 68, 0.8)';
+                else if (strike.intensity === 'high') color = 'rgba(249, 115, 22, 0.7)';
+                
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                thunderCtx.fillStyle = gradient;
+                thunderCtx.fillRect(pixel.x - 100, pixel.y - 100, 200, 200);
+            });
+
+            console.log('✅ Thunder heatmap drawn');
+        }
+
+        // Create Particles for Rain Animation
+        function createParticles(grid) {
+            particles = [];
+
+            grid.forEach(point => {
+                if (point.intensity > 0) {
+                    const latLng = L.latLng(point.lat, point.lon);
+                    const pixel = map.latLngToContainerPoint(latLng);
+
+                    for (let i = 0; i < Math.min(5, Math.ceil(point.intensity / 10)); i++) {
+                        particles.push({
+                            x: pixel.x + (Math.random() - 0.5) * 30,
+                            y: pixel.y + (Math.random() - 0.5) * 30,
+                            vx: point.windX || (Math.random() - 0.5) * 2,
+                            vy: point.windY || Math.random() * 2 + 1,
+                            intensity: point.intensity,
+                            life: Math.random() * 100 + 50
+                        });
+                    }
+                }
+            });
+
+            console.log(`✅ Created ${particles.length} particles`);
+        }
+
+        // Animate Particles
+        function animateParticles() {
+            particleCtx.clearRect(0, 0, particleCtx.canvas.width, particleCtx.canvas.height);
+            particleCtx.globalAlpha = 0.7;
+
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 1;
+
+                if (p.life > 0) {
+                    // Color based on intensity
+                    let color = '#3b82f6'; // blue
+                    if (p.intensity > 40) color = '#ef4444';
+                    else if (p.intensity > 30) color = '#f97316';
+                    else if (p.intensity > 20) color = '#fbbf24';
+                    else if (p.intensity > 10) color = '#10b981';
+
+                    particleCtx.fillStyle = color;
+                    particleCtx.beginPath();
+                    particleCtx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                    particleCtx.fill();
+                    return true;
+                }
+                return false;
+            });
+
+            animationFrame = requestAnimationFrame(animateParticles);
+        }
+
+        // Clear Lightning Display
+        function clearLightning() {
+            markerCluster.clearLayers();
+            lightningMarkers = [];
+            thunderCtx.clearRect(0, 0, thunderCtx.canvas.width, thunderCtx.canvas.height);
+        }
+
+        // UI Helper Functions
+        function showAlert(message) {
+            const alertBanner = document.getElementById('alert-banner');
+            const alertMessage = document.getElementById('alert-message');
+            alertMessage.textContent = message;
+            alertBanner.classList.add('show');
+            setTimeout(() => hideAlert(), 10000);
+        }
+
+        function hideAlert() {
+            document.getElementById('alert-banner').classList.remove('show');
+        }
+
+        function showSafeCard() {
+            document.getElementById('safe-card').classList.add('show');
+            setTimeout(() => hideSafeCard(), 5000);
+        }
+
+        function hideSafeCard() {
+            document.getElementById('safe-card').classList.remove('show');
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        console.log('✅ Lightning & Thunder Map initialized - Ready!');
+    </script>
+</body>
+</html>

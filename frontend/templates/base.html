@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Weather Intelligence Platform{% endblock %}</title>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>">
+</head>
+<body>
+    <!-- Navigation Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2>🌤️ Weather</h2>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            
+            <a href="/map" class="nav-item {% if request.path == '/map' %}active{% endif %}">
+                <span class="nav-icon">🗺️</span>
+                <span class="nav-text">Interactive Map</span>
+            </a>
+            
+            <a href="/alerts" class="nav-item {% if request.path == '/alerts' %}active{% endif %}">
+                <span class="nav-icon">🔔</span>
+                <span class="nav-text">Alert Center</span>
+            </a>
+            
+            <a href="/travel" class="nav-item {% if request.path == '/travel' %}active{% endif %}">
+                <span class="nav-icon">✈️</span>
+                <span class="nav-text">Travel Advisor</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <p>Weather Intelligence Platform</p>
+            <p class="version">v1.0.0</p>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- AI Weather Bot -->
+    <div id="aiBot" class="ai-bot">
+        <div id="botBubble" class="bot-bubble">
+            <span class="bot-icon">🤖</span>
+        </div>
+        
+        <div id="botChat" class="bot-chat" style="display: none;">
+            <div class="bot-chat-header">
+                <h3>🤖 AI Weather Assistant</h3>
+                <button id="closeBotBtn" class="close-bot-btn">✕</button>
+            </div>
+            
+            <div id="chatMessages" class="chat-messages">
+                <div class="bot-message">
+                    <p>👋 Hi! I'm your AI weather assistant. Ask me about weather conditions, forecasts, or travel safety for any city!</p>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <input 
+                    type="text" 
+                    id="botInput" 
+                    placeholder="Ask me about weather..."
+                    autocomplete="off"
+                >
+                <button id="sendBotBtn" class="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

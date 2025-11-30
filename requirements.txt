@@ -1,0 +1,29 @@
+# Weather Pulse - Python Dependencies
+
+# Core Flask framework
+Flask==3.0.0
+
+# HTTP requests (optional, for external API calls)
+requests==2.31.0
+
+# Environment variables support
+python-dotenv==1.0.0
+
+# ===== OPTIONAL: Socket.IO for Real-time Updates =====
+# Uncomment the following lines to enable Socket.IO
+# flask-socketio==5.3.5
+# python-socketio==5.10.0
+# eventlet==0.33.3
+
+# ===== OPTIONAL: Production WSGI Server =====
+# Uncomment for production deployment
+# gunicorn==21.2.0
+
+# ===== OPTIONAL: Database Support =====
+# Uncomment if you want to use SQLite/PostgreSQL instead of in-memory storage
+# flask-sqlalchemy==3.1.1
+# psycopg2-binary==2.9.9  # For PostgreSQL
+
+# ===== OPTIONAL: CORS Support =====
+# Uncomment if frontend is served from different domain
+# flask-cors==4.0.0

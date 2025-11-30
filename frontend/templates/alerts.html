@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Alert Center - Weather Intelligence{% endblock %}
+
+{% block content %}
+<div class="alerts-container">
+    <div class="page-header">
+        <h1>🔔 Alert Center</h1>
+        <p>Monitor and manage your weather alerts</p>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <h3 id="totalAlertsToday">0</h3>
+                <p>Alerts Today</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-content">
+                <h3 id="mostFrequent">-</h3>
+                <p>Most Frequent Alert</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">🕐</div>
+            <div class="stat-content">
+                <h3 id="lastAlert">-</h3>
+                <p>Last Alert Type</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+                <h3 id="totalAlerts">0</h3>
+                <p>Total Alerts</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts List -->
+    <div class="alerts-section">
+        <div class="section-header">
+            <h2>Recent Alerts</h2>
+            <button id="clearAllBtn" class="btn btn-danger">Clear All</button>
+        </div>
+        
+        <div id="alertsList" class="alerts-list">
+            <!-- Alerts will be dynamically loaded here -->
+        </div>
+        
+        <div id="noAlerts" class="no-alerts" style="display: none;">
+            <div class="no-alerts-icon">✓</div>
+            <h3>No alerts at this time</h3>
+            <p>You're all caught up! Weather alerts will appear here when conditions exceed your thresholds.</p>
+        </div>
+        
+        <div id="loadingAlerts" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading alerts...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.alerts-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.stat-content p {
+    margin: 0.25rem 0 0 0;
+    color: #7f8c8d;
+}
+
+/* Alerts Section */
+.alerts-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.section-header h2 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+.btn-danger {
+    padding: 0.75rem 1.5rem;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.alerts-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.alert-item {
+    padding: 1.5rem;
+    border-left: 4px solid;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: transform 0.2s;
+}
+
+.alert-item:hover {
+    transform: translateX(4px);
+}
+
+.alert-item.temperature {
+    border-left-color: #ff6b6b;
+}
+
+.alert-item.wind {
+    border-left-color: #4ecdc4;
+}
+
+.alert-item.rainfall {
+    border-left-color: #45b7d1;
+}
+
+.alert-item.lightning {
+    border-left-color: #f7b731;
+}
+
+.alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.5rem;
+}
+
+.alert-type {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.alert-time {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.alert-details {
+    color: #555;
+    margin-bottom: 0.5rem;
+}
+
+.alert-location {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.no-alerts {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.no-alerts-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #4CAF50;
+}
+
+.no-alerts h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.no-alerts p {
+    color: #7f8c8d;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+}
+</style>
+
+<script>
+// Load alerts on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAlerts();
+    loadStats();
+});
+
+async function loadAlerts() {
+    try {
+        const response = await fetch('/api/alerts/get');
+        const alerts = await response.json();
+        
+        const alertsList = document.getElementById('alertsList');
+        const noAlerts = document.getElementById('noAlerts');
+        const loadingAlerts = document.getElementById('loadingAlerts');
+        
+        loadingAlerts.style.display = 'none';
+        
+        if (alerts.length === 0) {
+            alertsList.innerHTML = '';
+            noAlerts.style.display = 'block';
+        } else {
+            noAlerts.style.display = 'none';
+            alertsList.innerHTML = alerts.map(alert => `
+                <div class="alert-item ${alert.field}">
+                    <div class="alert-header">
+                        <div class="alert-type">${alert.type}</div>
+                        <div class="alert-time">${formatTime(alert.time)}</div>
+                    </div>
+                    <div class="alert-details">
+                        Current: ${alert.value} | Threshold: ${alert.threshold}
+                    </div>
+                    <div class="alert-location">📍 ${alert.location}</div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading alerts:', error);
+        document.getElementById('loadingAlerts').innerHTML = 
+            '<p style="color: #dc3545;">Failed to load alerts</p>';
+    }
+}
+
+async function loadStats() {
+    try {
+        const response = await fetch('/api/alerts/stats');
+        const stats = await response.json();
+        
+        document.getElementById('totalAlertsToday').textContent = stats.total_alerts_today || 0;
+        document.getElementById('mostFrequent').textContent = stats.most_frequent || '-';
+        document.getElementById('lastAlert').textContent = stats.last_alert || '-';
+        document.getElementById('totalAlerts').textContent = stats.total_alerts || 0;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+document.getElementById('clearAllBtn').addEventListener('click', async function() {
+    if (!confirm('Are you sure you want to clear all alerts?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/alerts/clear', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            loadAlerts();
+            loadStats();
+        }
+    } catch (error) {
+        console.error('Error clearing alerts:', error);
+        alert('Failed to clear alerts');
+    }
+});
+
+function formatTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+}
+
+// Refresh alerts every 30 seconds
+setInterval(() => {
+    loadAlerts();
+    loadStats();
+}, 30000);
+</script>
+{% endblock %}

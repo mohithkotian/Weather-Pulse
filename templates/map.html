@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Map - Weather Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Google Maps API -->
+<script>
+    // This will be loaded dynamically with the API key from config
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="page-container map-page">
+    <header class="page-header">
+        <h1 class="page-title">Interactive Weather Map</h1>
+        <p class="page-subtitle">Toggle weather layers to visualize temperature, rainfall, and wind patterns</p>
+    </header>
+
+    <!-- Map Controls Toolbar -->
+    <div class="map-controls">
+        <div class="layer-controls">
+            <button id="tempLayerBtn" class="map-btn" data-layer="temperature" title="Temperature Layer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2v10m0 0a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M9 3v4M15 3v4M9 17a4 4 0 008 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Temperature</span>
+            </button>
+            
+            <button id="rainLayerBtn" class="map-btn" data-layer="precipitation" title="Precipitation Layer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0L12 2.69z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Rainfall</span>
+            </button>
+            
+            <button id="windLayerBtn" class="map-btn" data-layer="wind" title="Wind Layer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2" 
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Wind</span>
+            </button>
+        </div>
+        
+        <div class="utility-controls">
+            <button id="myLocationBtn" class="map-btn map-btn-utility" title="My Location">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" 
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>My Location</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map" class="map-container"></div>
+
+    <!-- Map Legend -->
+    <div class="map-legend" id="mapLegend" style="display: none;">
+        <h4 class="legend-title">Legend</h4>
+        <div class="legend-content" id="legendContent">
+            <!-- Dynamic legend content will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="mapLoading" class="map-loading">
+        <div class="spinner"></div>
+        <p>Loading map...</p>
+    </div>
+
+    <!-- Time Slider (Stubbed UI for future animation) -->
+    <div class="time-slider" style="display: none;">
+        <div class="time-controls">
+            <button class="time-btn" id="playBtn" title="Play animation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 3l14 9-14 9V3z" fill="currentColor"/>
+                </svg>
+            </button>
+            <input type="range" class="time-range" id="timeRange" min="0" max="24" value="0">
+            <span class="time-display" id="timeDisplay">Current</span>
+        </div>
+        <p class="time-note">
+            <small>Note: Time animation requires additional configuration with OpenWeather time-based tiles</small>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

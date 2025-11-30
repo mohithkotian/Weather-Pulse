@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightning & Thunder Map - Windy Style</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <!-- Leaflet Heat Plugin CSS (for better heatmap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.heat/dist/leaflet-heat.css" />
+    
+    <!-- Custom Layer CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer.css') }}" />
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Canvas Overlay (particles only) -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <input type="text" id="search-input" class="search-input" placeholder="Search location (e.g., Singapore, New York, Tokyo)">
+        <button id="search-btn" class="search-btn">Search</button>
+    </div>
+
+    <!-- Alert Card -->
+    <div id="alert-card" class="alert-card">
+        <div class="alert-icon" id="alert-icon"></div>
+        <div class="alert-content">
+            <h2 id="alert-title"></h2>
+            <p id="alert-message"></p>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <!-- Model Selector -->
+        <div class="control-group">
+            <label class="control-label">Weather Model</label>
+            <div class="model-buttons">
+                <button class="model-btn active" data-model="ECMWF">ECMWF</button>
+                <button class="model-btn" data-model="GFS">GFS</button>
+                <button class="model-btn" data-model="ICON">ICON</button>
+            </div>
+        </div>
+
+        <!-- Opacity Control -->
+        <div class="control-group">
+            <label class="control-label">Heatmap Opacity</label>
+            <input type="range" id="opacity-slider" class="opacity-slider" min="0" max="100" value="70">
+            <span class="opacity-value" id="opacity-value">70%</span>
+        </div>
+
+        <!-- Toggles -->
+        <div class="control-group">
+            <div class="toggle-item">
+                <label class="toggle-label">
+                    <input type="checkbox" id="auto-refresh-toggle" checked>
+                    Auto-refresh (30s)
+                </label>
+            </div>
+            <div class="toggle-item">
+                <label class="toggle-label">
+                    <input type="checkbox" id="particles-toggle" checked>
+                    Show Particles
+                </label>
+            </div>
+            <div class="toggle-item">
+                <label class="toggle-label">
+                    <input type="checkbox" id="test-mode-toggle">
+                    Test Mode
+                </label>
+            </div>
+        </div>
+
+        <!-- Manual Refresh -->
+        <div class="control-group">
+            <button id="refresh-btn" class="refresh-btn">🔄 Refresh Now</button>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-container">
+        <button id="play-btn" class="play-btn">▶️</button>
+        <div class="timeline-track">
+            <input type="range" id="timeline-slider" class="timeline-slider" min="0" max="24" value="0" step="1">
+            <div class="timeline-labels">
+                <span class="now-label">NOW</span>
+                <span>+6h</span>
+                <span>+12h</span>
+                <span>+18h</span>
+                <span>+24h</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend Panel -->
+    <div class="legend-panel">
+        <h3>Lightning Intensity</h3>
+        <div class="color-gradient"></div>
+        <div class="legend-labels">
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
+            <span>Extreme</span>
+        </div>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="legend-icon"><img src="/images/icon-for-lighting-and-thunder.png" style="width:24px;height:24px;vertical-align:middle;"></span>
+                <span>Lightning Strike</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon red-dot">●</span>
+                <span>High Activity Zone</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading lightning data...</p>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet MarkerCluster JavaScript -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <!-- Leaflet Heat Plugin JavaScript -->
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+    
+    <!-- Custom Layer JavaScript -->
+    <script src="{{ url_for('static', filename='js/layer.js') }}"></script>
+</body>
+</html>

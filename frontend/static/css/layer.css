@@ -1,0 +1,578 @@
+/* ============================================================================
+   LIGHTNING & THUNDER MAP - Complete CSS Styling
+   Windy.com Style Design
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    background: #0a0a0a;
+    color: #ffffff;
+}
+
+/* ============================================================================
+   MAP CONTAINER
+   ============================================================================ */
+
+#map {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+/* ============================================================================
+   CANVAS OVERLAYS
+   ============================================================================ */
+
+#particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* ============================================================================
+   SEARCH BAR
+   ============================================================================ */
+
+.search-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    background: rgba(20, 20, 20, 0.95);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+}
+
+.search-input {
+    padding: 12px 20px;
+    background: rgba(55, 65, 81, 0.8);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 14px;
+    width: 400px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: rgba(59, 130, 246, 0.8);
+}
+
+.search-input::placeholder {
+    color: #9ca3af;
+}
+
+.search-btn {
+    padding: 12px 24px;
+    background: rgba(59, 130, 246, 0.9);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-btn:hover {
+    background: rgba(96, 165, 250, 1);
+    transform: translateY(-1px);
+}
+
+/* ============================================================================
+   ALERT CARD
+   ============================================================================ */
+
+.alert-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    display: none;
+    max-width: 450px;
+}
+
+.alert-card.show {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+.alert-card.danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95));
+}
+
+.alert-card.safe {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+}
+
+.alert-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    animation: pulse 2s infinite;
+}
+
+.alert-content h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.alert-content p {
+    font-size: 16px;
+    opacity: 0.95;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+/* ============================================================================
+   CONTROLS PANEL
+   ============================================================================ */
+
+.controls-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+}
+
+.control-group {
+    margin-bottom: 20px;
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Model Buttons */
+.model-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.model-btn {
+    flex: 1;
+    padding: 10px;
+    background: rgba(55, 65, 81, 0.8);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    border-radius: 6px;
+    color: #d1d5db;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.model-btn:hover {
+    background: rgba(75, 85, 99, 0.9);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.model-btn.active {
+    background: rgba(59, 130, 246, 0.9);
+    border-color: rgba(96, 165, 250, 1);
+    color: #ffffff;
+}
+
+/* Opacity Slider */
+.opacity-slider {
+    width: 100%;
+    height: 4px;
+    background: rgba(55, 65, 81, 0.8);
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+    margin-bottom: 8px;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: rgba(59, 130, 246, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.opacity-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: rgba(59, 130, 246, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.opacity-value {
+    font-size: 13px;
+    color: #9ca3af;
+    text-align: right;
+    display: block;
+}
+
+/* Toggle Items */
+.toggle-item {
+    margin-bottom: 8px;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: #d1d5db;
+}
+
+.toggle-label input[type="checkbox"] {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Refresh Button */
+.refresh-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgba(59, 130, 246, 0.9);
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    background: rgba(96, 165, 250, 1);
+    transform: translateY(-1px);
+}
+
+/* ============================================================================
+   TIMELINE
+   ============================================================================ */
+
+.timeline-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    min-width: 600px;
+}
+
+.play-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(59, 130, 246, 0.9);
+    border: none;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-btn:hover {
+    background: rgba(96, 165, 250, 1);
+    transform: scale(1.1);
+}
+
+.timeline-track {
+    flex: 1;
+}
+
+.timeline-slider {
+    width: 100%;
+    height: 4px;
+    background: rgba(55, 65, 81, 0.8);
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #ffffff;
+    border: 3px solid rgba(59, 130, 246, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.timeline-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #ffffff;
+    border: 3px solid rgba(59, 130, 246, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 8px;
+}
+
+.now-label {
+    color: #fbbf24;
+    font-weight: 700;
+}
+
+/* ============================================================================
+   LEGEND PANEL
+   ============================================================================ */
+
+.legend-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    min-width: 250px;
+}
+
+.legend-panel h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #f3f4f6;
+}
+
+.color-gradient {
+    height: 20px;
+    border-radius: 4px;
+    background: linear-gradient(to right, 
+        #3b82f6 0%, 
+        #10b981 25%, 
+        #fbbf24 50%, 
+        #f97316 75%, 
+        #ef4444 100%);
+    margin-bottom: 8px;
+}
+
+.legend-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #9ca3af;
+    margin-bottom: 16px;
+}
+
+.legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #d1d5db;
+}
+
+.legend-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.legend-icon.red-dot {
+    color: #ef4444;
+}
+
+/* ============================================================================
+   LOADING OVERLAY
+   ============================================================================ */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 3000;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-overlay p {
+    color: #ffffff;
+    font-size: 16px;
+}
+
+/* ============================================================================
+   LEAFLET CUSTOMIZATION
+   ============================================================================ */
+
+.leaflet-popup-content-wrapper {
+    background: rgba(30, 30, 30, 0.95);
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 0;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+}
+
+.leaflet-popup-tip {
+    background: rgba(30, 30, 30, 0.95);
+}
+
+/* Remove Leaflet attribution */
+.leaflet-control-attribution {
+    display: none;
+}
+
+/* Lightning Icon Styling */
+.lightning-icon {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 20px rgba(255, 165, 0, 0.6));
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 20px rgba(255, 165, 0, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)) drop-shadow(0 0 30px rgba(255, 165, 0, 0.8));
+    }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .search-container {
+        width: calc(100% - 40px);
+        flex-direction: column;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .controls-panel {
+        top: auto;
+        bottom: 100px;
+        right: 10px;
+        min-width: 250px;
+    }
+    
+    .timeline-container {
+        min-width: calc(100% - 40px);
+        padding: 12px 16px;
+    }
+    
+    .legend-panel {
+        display: none;
+    }
+}

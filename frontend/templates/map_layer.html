@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Layer - Windy Style</title>
+    
+    <!-- API KEYS - Configure in backend/app.py -->
+    <!-- Tomorrow.io API Key: Q5comtfrYeC3HZcssHEIQyrK5O69psf3 -->
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet MarkerCluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <!-- Custom Layer Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layer.css') }}" />
+</head>
+<body>
+    <!-- Full-screen Map Container -->
+    <div id="map-container">
+        <div id="weather-map"></div>
+        
+        <!-- WebGL Particle Canvas Overlay -->
+        <canvas id="particle-canvas"></canvas>
+        
+        <!-- Lightning Heatmap Canvas -->
+        <canvas id="heatmap-canvas"></canvas>
+    </div>
+
+    <!-- Top Controls Panel -->
+    <div id="top-controls">
+        <!-- Model Selector -->
+        <div class="control-group">
+            <label>Weather Model:</label>
+            <div class="model-selector">
+                <button class="model-btn active" data-model="ECMWF">ECMWF</button>
+                <button class="model-btn" data-model="GFS">GFS</button>
+                <button class="model-btn" data-model="ICON">ICON</button>
+            </div>
+        </div>
+
+        <!-- Particle Animation Toggle -->
+        <div class="control-group">
+            <label class="toggle-switch">
+                <input type="checkbox" id="particles-toggle" checked>
+                <span class="slider"></span>
+                <span class="label-text">Particle Animation</span>
+            </label>
+        </div>
+
+        <!-- Opacity Control -->
+        <div class="control-group">
+            <label>Layer Opacity:</label>
+            <input type="range" id="opacity-slider" min="0" max="100" value="70" />
+            <span id="opacity-value">70%</span>
+        </div>
+
+        <!-- Refresh Button -->
+        <button id="refresh-btn" class="icon-btn" title="Refresh Data">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+        </button>
+
+        <!-- Dev Mode Toggle -->
+        <div class="control-group">
+            <label class="toggle-switch">
+                <input type="checkbox" id="dev-mode-toggle">
+                <span class="slider"></span>
+                <span class="label-text">Test Mode</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Legend Panel -->
+    <div id="legend-panel">
+        <h4>Rain & Thunder</h4>
+        <div class="legend-scale">
+            <div class="scale-bar"></div>
+            <div class="scale-labels">
+                <span>0</span>
+                <span>5</span>
+                <span>10</span>
+                <span>20</span>
+                <span>50+ mm/h</span>
+            </div>
+        </div>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="icon">⚡</span>
+                <span>Lightning Strike</span>
+            </div>
+            <div class="legend-item">
+                <span class="icon">🔴</span>
+                <span>High Activity</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Scrubber (Bottom) -->
+    <div id="timeline-panel">
+        <div class="timeline-controls">
+            <!-- Play/Pause Button -->
+            <button id="play-btn" class="timeline-btn">
+                <svg class="play-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg class="pause-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                    <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                </svg>
+            </button>
+
+            <!-- Speed Control -->
+            <div class="speed-selector">
+                <button class="speed-btn active" data-speed="1">1x</button>
+                <button class="speed-btn" data-speed="2">2x</button>
+                <button class="speed-btn" data-speed="4">4x</button>
+            </div>
+
+            <!-- Current Time Display -->
+            <div class="time-display">
+                <span id="current-time">Now</span>
+            </div>
+        </div>
+
+        <!-- Timeline Scrubber Bar -->
+        <div class="timeline-scrubber">
+            <div class="timeline-track">
+                <div class="timeline-progress" style="width: 0%;"></div>
+                <div class="timeline-handle" style="left: 0%;"></div>
+                
+                <!-- Hour Markers -->
+                <div class="timeline-markers">
+                    <!-- Generated dynamically by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Labels -->
+        <div class="timeline-labels">
+            <span>-3h</span>
+            <span>-2h</span>
+            <span>-1h</span>
+            <span class="now-marker">NOW</span>
+            <span>+1h</span>
+            <span>+2h</span>
+            <span>+3h</span>
+        </div>
+    </div>
+
+    <!-- Safe Conditions Overlay (shown when no data) -->
+    <div id="safe-conditions-overlay" style="display: none;">
+        <div class="safe-card">
+            <div class="safe-icon">✓</div>
+            <h3>Safe Conditions</h3>
+            <p>No recent lightning strikes detected in this area.</p>
+            <small>The sky is clear - safe conditions</small>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading weather data...</p>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet MarkerCluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <!-- PIXI.js for WebGL Particles -->
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.3.2/dist/pixi.min.js"></script>
+    
+    <!-- Main Layer Script -->
+    <script src="{{ url_for('static', filename='js/layer.js') }}"></script>
+</body>
+</html>

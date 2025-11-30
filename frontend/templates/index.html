@@ -1,0 +1,1546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weatherly — Dashboard</title>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=35" />
+  
+  <!-- Leaflet CSS for Lightning Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <!-- Leaflet Heat Plugin CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.css" />
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='images/weather-app-logo.png') }}" alt="Weatherly">
+      </div>
+      <nav>
+        <button class="icon-btn active" data-view="dashboard" title="Dashboard">
+          <img src="{{ url_for('static', filename='images/home.png') }}" alt="Home">
+        </button>
+        <button class="icon-btn" data-view="analytics" title="Analytics">
+          <img src="{{ url_for('static', filename='images/stats.png') }}" alt="Stats">
+        </button>
+        <button class="icon-btn" data-view="map" title="Weather Map">
+          <img src="{{ url_for('static', filename='images/pin.png') }}" alt="Location">
+        </button>
+        <button class="icon-btn" data-view="alerts" title="Alerts & Reports">
+          <img src="{{ url_for('static', filename='images/list.png') }}" alt="List">
+        </button>
+        <button class="icon-btn" data-view="planner" title="Forecast Planner">
+          <img src="{{ url_for('static', filename='images/calendar.png') }}" alt="Calendar">
+        </button>
+        <button class="icon-btn" onclick="window.open('/weather-map', '_blank')" title="Lightning Map">
+          <img src="/images/icon-for-lighting-and-thunder.png" alt="Lightning" class="lightning-icon-sidebar">
+        </button>
+      </nav>
+      
+      <nav class="sidebar-bottom">
+        <button class="icon-btn" id="openAiBot" title="AI Weather Chatbot">
+          <img src="{{ url_for('static', filename='images/ai-bot.png') }}" alt="AI Bot" style="width: 28px; height: 28px;">
+        </button>
+        <button class="icon-btn" data-view="travel" title="Travel Safety Advisor">
+          <img src="{{ url_for('static', filename='images/travel.png') }}" alt="Travel" style="width: 28px; height: 28px;">
+        </button>
+        <button class="icon-btn" data-view="alert-center" title="Weather Alerts">
+          <img src="{{ url_for('static', filename='images/warning.png') }}" alt="Warning" id="sidebarWarningIcon">
+          <span class="sidebar-badge" id="sidebarAlertBadge" style="display: none;">0</span>
+        </button>
+        <button class="icon-btn" data-view="settings" title="Settings">
+          <img src="{{ url_for('static', filename='images/gear.png') }}" alt="Settings">
+        </button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <div class="title">
+          <h1>Weather Tracker</h1>
+          <div id="date" class="subtitle"></div>
+        </div>
+
+        <div class="search-row">
+          <input id="cityInput" type="search" placeholder="Search city, e.g. London" />
+          <button id="searchBtn" title="Search">
+            <img src="{{ url_for('static', filename='images/search-interface-symbol.png') }}" alt="Search">
+          </button>
+          
+          <!-- Weather Notification Bell -->
+          <div class="notification-bell-container">
+            <button id="notificationBell" class="notification-bell" title="Weather Alerts" onclick="toggleNotificationDrawer()">
+              <img id="bellIcon" src="{{ url_for('static', filename='images/bell-deactive.png') }}" alt="Notifications">
+              <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+            </button>
+            
+            <!-- Notification Drawer -->
+            <div id="notificationDrawer" class="notification-drawer" style="display: none;">
+              <div class="drawer-header">
+                <h3>Weather Alerts</h3>
+                <span id="alertCount" class="alert-count" style="display: none;">0</span>
+                <button class="drawer-close-btn" onclick="toggleNotificationDrawer()" title="Close">×</button>
+              </div>
+              <div id="alertsContent" class="drawer-content">
+                <div class="no-alerts-state">
+                  <svg class="no-alerts-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                  <div class="no-alerts-card">
+                    <div class="no-alerts-title">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      All Clear!
+                    </div>
+                    <p class="no-alerts-text">No weather alerts at the moment. Configure alerts by clicking the floating button.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="drawer-footer">
+                <p id="lastUpdated" class="last-updated">Last checked: Never</p>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                  <button class="drawer-action-btn" onclick="clearAllNotifications()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); flex: 1;">🗑️ Clear All</button>
+                  <button class="drawer-action-btn" onclick="openWeatherAlertModal()" style="flex: 1;">⚙️ Configure</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <!-- Current & Trend -->
+        <div class="card current-card">
+          <div class="current-header">
+            <div class="current-date">
+              <div id="dayName" class="day-name">—</div>
+              <div id="fullDate" class="full-date">—</div>
+            </div>
+            <div id="locationBadge" class="location-badge">
+              <img src="{{ url_for('static', filename='images/pin.png') }}" alt="Location" class="pin-icon">
+              <span id="countryName">—</span>
+            </div>
+          </div>
+          
+          <div class="current-body">
+            <div class="weather-icon-container">
+              <img id="conditionIcon" src="{{ url_for('static', filename='images/cloudy.png') }}" alt="Weather" class="weather-icon">
+            </div>
+            
+            <div class="current-details">
+              <div id="tempBig" class="temp-big">--°C</div>
+              <div class="temp-range">
+                <span class="range-label">High:</span> <span id="high" class="range-value">--°</span>
+                <span class="range-label">Low:</span> <span id="low" class="range-value">--°</span>
+              </div>
+              <div id="desc" class="condition-text">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card trend-card">
+          <div class="card-header">Temperature Trend</div>
+          <canvas id="tempChart" height="160"></canvas>
+        </div>
+
+        <!-- Forecast summary -->
+        <div class="card forecast-card">
+          <div class="card-header">Forecast Summary</div>
+          <div id="forecastList" class="forecast-list">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- Today details -->
+        <div class="card today-card">
+          <div class="card-header">Today</div>
+          <div class="today-grid">
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/sun.png') }}" alt="Sunrise" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Sunrise</div>
+                <div id="sunrise" class="big">--:--</div>
+              </div>
+            </div>
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/night.png') }}" alt="Sunset" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Sunset</div>
+                <div id="sunset" class="big">--:--</div>
+              </div>
+            </div>
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/cloudy.png') }}" alt="Humidity" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Humidity</div>
+                <div id="humidity" class="big">--%</div>
+              </div>
+            </div>
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/windy.png') }}" alt="Wind" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Wind</div>
+                <div id="wind" class="big">-- m/s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Weather Map -->
+        <div class="card map-card">
+          <div class="card-header">Interactive Weather Map</div>
+          <div id="map"></div>
+          <div id="regionsTable" class="regions-table">
+            <!-- regions list -->
+          </div>
+        </div>
+
+        <!-- Precipitation -->
+        <div class="card precip-card">
+          <div class="card-header">Precipitation Levels</div>
+          <canvas id="precipChart" height="140"></canvas>
+        </div>
+
+        <!-- Alerts -->
+        <div class="card alerts-card">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Weather Alerts</span>
+            <button class="clear-alerts-header-btn" onclick="clearAllNotifications()" title="Clear All Notifications">
+              🗑️ Clear All
+            </button>
+          </div>
+          <div id="alertsList" class="alerts-list">
+            <div class="no-alert">No alerts</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS VIEW -->
+      <section id="analyticsView" class="view-section" style="display:none;">
+        <h2 class="view-title">Weather Analytics & Smart Climate Insights</h2>
+        
+        <!-- AI Climate Insight Box -->
+        <div class="climate-insight-banner">
+          <div class="insight-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.1)"/>
+              <circle cx="9" cy="10" r="1.5" fill="white"/>
+              <circle cx="15" cy="10" r="1.5" fill="white"/>
+              <path d="M8 15C8 15 9.5 17 12 17C14.5 17 16 15 16 15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M12 2V4M12 20V22M22 12H20M4 12H2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="insight-content">
+            <div class="insight-label">AI Climate Insight</div>
+            <div id="aiInsight" class="insight-text">Analyzing weather patterns...</div>
+          </div>
+        </div>
+
+        <!-- Temperature Anomalies & Weekly Summary -->
+        <div class="analytics-top-row">
+          <div class="card anomaly-card">
+            <div class="card-header">Temperature Anomalies Tracker</div>
+            <div class="anomaly-content">
+              <div class="anomaly-main">
+                <div class="anomaly-value" id="anomalyValue">--</div>
+                <div class="anomaly-label">vs. Historical Average</div>
+              </div>
+              <div class="anomaly-chart-mini">
+                <canvas id="anomalySparkline" height="60"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card summary-card">
+            <div class="card-header">Weekly Climate Summary</div>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <div class="summary-icon">🌡️</div>
+                <div class="summary-data">
+                  <div class="summary-value" id="avgTemp">--°C</div>
+                  <div class="summary-label">Avg Temperature</div>
+                </div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-icon">💧</div>
+                <div class="summary-data">
+                  <div class="summary-value" id="avgHumidity">--%</div>
+                  <div class="summary-label">Avg Humidity</div>
+                </div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-icon">🌧️</div>
+                <div class="summary-data">
+                  <div class="summary-value" id="rainyDays">-- days</div>
+                  <div class="summary-label">Rainy Days</div>
+                </div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-icon">💨</div>
+                <div class="summary-data">
+                  <div class="summary-value" id="avgWind">-- m/s</div>
+                  <div class="summary-label">Avg Wind Speed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Charts Row -->
+        <div class="analytics-charts-row">
+          <div class="card chart-card">
+            <div class="card-header">Temperature Variations (7 Days)</div>
+            <div class="chart-wrapper">
+              <canvas id="tempVariationChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="card chart-card">
+            <div class="card-header">Comfort Index Analysis</div>
+            <div class="comfort-legend">
+              <span class="comfort-badge excellent">Excellent (80-100)</span>
+              <span class="comfort-badge good">Good (60-79)</span>
+              <span class="comfort-badge fair">Fair (40-59)</span>
+              <span class="comfort-badge poor">Poor (<40)</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="comfortIndexChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rainfall vs Sunshine & Humidity Heatmap -->
+        <div class="analytics-charts-row">
+          <div class="card chart-card">
+            <div class="card-header">Rainfall vs Sunshine Hours</div>
+            <div class="chart-wrapper">
+              <canvas id="rainfallSunshineChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="card-header">Humidity–Temperature Correlation</div>
+            <div id="humidityTempHeatmap" class="heatmap-container"></div>
+          </div>
+        </div>
+
+        <!-- Wind Pattern & Additional Metrics -->
+        <div class="analytics-bottom-row">
+          <div class="card wind-card">
+            <div class="card-header">Wind Pattern Overview (7 Days)</div>
+            <div id="windPatternChart" class="wind-pattern-container"></div>
+          </div>
+
+          <div class="card metrics-card">
+            <div class="card-header">Advanced Metrics</div>
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <div class="metric-icon">🌡️</div>
+                <div class="metric-value" id="tempRange">--</div>
+                <div class="metric-label">Temp Range</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-icon">📊</div>
+                <div class="metric-value" id="pressureTrend">--</div>
+                <div class="metric-label">Pressure Trend</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-icon">☀️</div>
+                <div class="metric-value" id="uvIndex">--</div>
+                <div class="metric-label">UV Index</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-icon">🌫️</div>
+                <div class="metric-value" id="visibility">--</div>
+                <div class="metric-label">Visibility</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAP VIEW -->
+      <section id="mapView" class="view-section" style="display:none;">
+        <h2 class="view-title">Interactive Weather Map</h2>
+        
+        <!-- Map Controls Panel -->
+        <div class="map-controls-panel">
+          <div class="map-search-container">
+            <input type="text" id="mapCitySearch" class="map-search-input" placeholder="🔍 Search cities...">
+          </div>
+          
+          <div class="map-control-buttons">
+            <button id="locateMe" class="map-btn" title="My Location">
+              <span class="map-btn-icon">📍</span>
+              <span class="map-btn-text">My Location</span>
+            </button>
+            
+            <button id="compareMode" class="map-btn" title="Compare Cities">
+              <span class="map-btn-icon">⚖️</span>
+              <span class="map-btn-text">Compare</span>
+            </button>
+          </div>
+          
+          <div class="map-layer-toggles">
+            <button type="button" id="tempLayerBtn" class="layer-pill-btn" data-layer="temperature">
+              <svg class="layer-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+              </svg>
+              <span class="layer-label">Temperature</span>
+            </button>
+            <button type="button" id="rainLayerBtn" class="layer-pill-btn" data-layer="rainfall">
+              <svg class="layer-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+              <span class="layer-label">Rainfall</span>
+            </button>
+            <button type="button" id="windLayerBtn" class="layer-pill-btn" data-layer="wind">
+              <svg class="layer-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+              </svg>
+              <span class="layer-label">Wind</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-main-container">
+          <div id="googleMap" class="google-map"></div>
+          
+          <!-- Weather Comparison Card -->
+          <div id="comparisonCard" class="comparison-card hidden">
+            <div class="comparison-header">
+              <h4>Weather Comparison</h4>
+              <button class="close-comparison">×</button>
+            </div>
+            <div class="comparison-body">
+              <div class="comparison-city">
+                <div class="comp-city-name" id="compCity1Name">City 1</div>
+                <div class="comp-temp" id="compCity1Temp">--°C</div>
+                <div class="comp-details">
+                  <div class="comp-detail">💧 <span id="compCity1Humidity">--</span>% <span id="compCity1HumidityArrow"></span></div>
+                  <div class="comp-detail">💨 <span id="compCity1Wind">--</span> m/s <span id="compCity1WindArrow"></span></div>
+                  <div class="comp-detail">📊 <span id="compCity1Condition">--</span></div>
+                </div>
+              </div>
+              <div class="comparison-vs">VS</div>
+              <div class="comparison-city">
+                <div class="comp-city-name" id="compCity2Name">City 2</div>
+                <div class="comp-temp" id="compCity2Temp">--°C</div>
+                <div class="comp-details">
+                  <div class="comp-detail">💧 <span id="compCity2Humidity">--</span>% <span id="compCity2HumidityArrow"></span></div>
+                  <div class="comp-detail">💨 <span id="compCity2Wind">--</span> m/s <span id="compCity2WindArrow"></span></div>
+                  <div class="comp-detail">📊 <span id="compCity2Condition">--</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="comparison-footer">
+              <div class="comparison-insight" id="comparisonInsight">Select two cities to compare</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saved Locations Sidebar -->
+        <div class="saved-locations-panel">
+          <div class="saved-header">
+            <h3>📌 Saved Locations</h3>
+            <button id="clearAllLocations" class="clear-btn" title="Clear All">🗑️</button>
+          </div>
+          <div id="savedLocationsList" class="saved-locations-list"></div>
+          <div class="saved-footer">
+            <small>Click markers on map to save locations</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALERTS VIEW -->
+      <section id="alertsView" class="view-section" style="display:none;">
+        <h2 class="view-title">Weather Alerts & Reports</h2>
+        <div id="alertsContent" class="alerts-content">
+          <div class="card">
+            <div class="card-header">Active Weather Alerts</div>
+            <div id="activeAlerts" class="active-alerts-list">
+              <div class="no-alert">No active alerts</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLANNER VIEW -->
+      <section id="plannerView" class="view-section" style="display:none;">
+        <h2 class="view-title">Weather Forecast</h2>
+        <div class="planner-grid">
+          <div class="card forecast-detail-card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <span>7-Day Weather Forecast</span>
+              <div class="forecast-nav-arrows">
+                <button id="scrollLeftBtn" class="forecast-nav-btn" title="Scroll Left">‹</button>
+                <button id="scrollRightBtn" class="forecast-nav-btn" title="Scroll Right">›</button>
+              </div>
+            </div>
+            <div class="forecast-scroll-wrapper">
+              <div id="detailedForecast" class="detailed-forecast"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALERT CENTER VIEW -->
+      <section id="alert-centerView" class="view-section" style="display:none;">
+        <h2 class="view-title">Alert Center - Manage Your Weather Alerts</h2>
+        
+        <div class="alert-center-grid">
+          <!-- Active Alerts Card -->
+          <div class="card alert-center-card">
+            <div class="card-header">
+              <span>🔔 Active Alerts</span>
+              <button class="clear-all-btn" onclick="clearAllNotifications()" title="Clear All">Clear All</button>
+            </div>
+            <div id="activeAlertsCenter" class="active-alerts-center">
+              <div class="no-alert">No active alerts</div>
+            </div>
+          </div>
+
+          <!-- Alert Configuration Card -->
+          <div class="card alert-center-card">
+            <div class="card-header">⚙️ Quick Settings</div>
+            <div class="alert-center-config">
+              <div class="config-summary-item">
+                <span class="config-icon">🌡️</span>
+                <div class="config-info">
+                  <div class="config-label">Temperature Alert</div>
+                  <div class="config-value" id="tempConfigValue">Not set</div>
+                </div>
+                <label class="mini-toggle">
+                  <input type="checkbox" id="quickToggleTemperature" onchange="handleQuickToggle('temperature')">
+                  <span class="mini-slider"></span>
+                </label>
+              </div>
+              <div class="config-summary-item">
+                <span class="config-icon">💨</span>
+                <div class="config-info">
+                  <div class="config-label">Wind Speed Alert</div>
+                  <div class="config-value" id="windConfigValue">Not set</div>
+                </div>
+                <label class="mini-toggle">
+                  <input type="checkbox" id="quickToggleWind" onchange="handleQuickToggle('wind')">
+                  <span class="mini-slider"></span>
+                </label>
+              </div>
+              <div class="config-summary-item">
+                <span class="config-icon">🌧️</span>
+                <div class="config-info">
+                  <div class="config-label">Rainfall Alert</div>
+                  <div class="config-value" id="rainConfigValue">Not set</div>
+                </div>
+                <label class="mini-toggle">
+                  <input type="checkbox" id="quickToggleRainfall" onchange="handleQuickToggle('rainfall')">
+                  <span class="mini-slider"></span>
+                </label>
+              </div>
+              <div class="config-summary-item">
+                <span class="config-icon">⚡</span>
+                <div class="config-info">
+                  <div class="config-label">Lightning Alert</div>
+                  <div class="config-value" id="lightningConfigValue">Not set</div>
+                </div>
+                <label class="mini-toggle">
+                  <input type="checkbox" id="quickToggleLightning" onchange="handleQuickToggle('lightning')">
+                  <span class="mini-slider"></span>
+                </label>
+              </div>
+              <div class="config-summary-item">
+                <span class="config-icon">😷</span>
+                <div class="config-info">
+                  <div class="config-label">Air Quality Alert</div>
+                  <div class="config-value" id="aqiConfigValue">Not set</div>
+                </div>
+                <label class="mini-toggle">
+                  <input type="checkbox" id="quickToggleAqi" onchange="handleQuickToggle('aqi')">
+                  <span class="mini-slider"></span>
+                </label>
+              </div>
+              <button class="config-edit-btn" onclick="openWeatherAlertModal()">📝 Edit All Settings</button>
+            </div>
+          </div>
+
+          <!-- Alert History Card -->
+          <div class="card alert-center-card">
+            <div class="card-header">📊 Alert Statistics</div>
+            <div class="alert-stats">
+              <div class="stat-item">
+                <div class="stat-value" id="totalAlertsToday">0</div>
+                <div class="stat-label">Alerts Today</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="mostFrequentType">—</div>
+                <div class="stat-label">Most Frequent</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="lastAlertTime">—</div>
+                <div class="stat-label">Last Alert</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRAVEL SAFETY ADVISOR VIEW -->
+      <section id="travelView" class="view-section" style="display:none;">
+        <h2 class="view-title">✈️ Travel Safety Advisor</h2>
+        
+        <div class="travel-advisor-container">
+          <!-- Input Form -->
+          <div class="card travel-form-card">
+            <h3>Plan Your Trip</h3>
+            <form id="travelSafetyForm" class="travel-form">
+              <div class="form-group">
+                <label for="travelDestination">Destination City</label>
+                <input 
+                  type="text" 
+                  id="travelDestination" 
+                  placeholder="e.g., London, Paris, Tokyo"
+                  class="form-input"
+                  required
+                >
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="travelDateFrom">From Date</label>
+                  <input 
+                    type="date" 
+                    id="travelDateFrom" 
+                    class="form-input"
+                  >
+                </div>
+
+                <div class="form-group">
+                  <label for="travelDateTo">To Date</label>
+                  <input 
+                    type="date" 
+                    id="travelDateTo" 
+                    class="form-input"
+                  >
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary btn-gradient">
+                <span>🔍</span> Check Travel Safety
+              </button>
+            </form>
+          </div>
+
+          <!-- Results Area -->
+          <div id="travelResults" class="travel-results-area" style="display: none;">
+            
+            <!-- Safety Assessment Card -->
+            <div class="neuro-card safety-assessment-card">
+              <div class="card-header-travel">
+                <h3>Safety Assessment</h3>
+                <span id="travelDestName" class="destination-tag"></span>
+              </div>
+              
+              <div class="safety-gauge-container">
+                <svg class="safety-gauge" width="200" height="200" viewBox="0 0 200 200">
+                  <defs>
+                    <linearGradient id="safeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#34d399;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="moderateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="unsafeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#f87171;stop-opacity:1" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="100" cy="100" r="85" fill="none" stroke="#e5e7eb" stroke-width="16"/>
+                  <circle id="safetyGaugeCircle" cx="100" cy="100" r="85" fill="none" 
+                    stroke="url(#safeGradient)" stroke-width="16" stroke-linecap="round"
+                    stroke-dasharray="534" stroke-dashoffset="534"
+                    transform="rotate(-90 100 100)" class="gauge-progress"/>
+                </svg>
+                <div class="gauge-center">
+                  <div id="travelScore" class="gauge-score">0</div>
+                  <div class="gauge-label">/ 100</div>
+                </div>
+              </div>
+              
+              <div class="verdict-section">
+                <div id="travelVerdict" class="verdict-badge-large">Analyzing...</div>
+                <p id="travelMessage" class="verdict-description"></p>
+              </div>
+            </div>
+
+            <!-- Weather Factors Grid (4 cards) -->
+            <div class="weather-factors-grid">
+              
+              <!-- Temperature Summary -->
+              <div class="neuro-card factor-card">
+                <div class="factor-icon-container temp-gradient">
+                  <img src="{{ url_for('static', filename='images/warm.png') }}" alt="Temperature" class="factor-icon-img">
+                </div>
+                <div class="factor-content">
+                  <div id="factorTemp" class="factor-value">--</div>
+                  <div class="factor-label">Temperature</div>
+                  <div id="factorTempRange" class="factor-sublabel">Range: --</div>
+                </div>
+                <div class="factor-mini-gauge">
+                  <div id="tempMiniBar" class="mini-bar temp-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Wind Analysis -->
+              <div class="neuro-card factor-card">
+                <div class="factor-icon-container wind-gradient">
+                  <img src="{{ url_for('static', filename='images/wind.png') }}" alt="Wind" class="factor-icon-img">
+                </div>
+                <div class="factor-content">
+                  <div id="factorWind" class="factor-value">--</div>
+                  <div class="factor-label">Wind Speed</div>
+                  <div id="factorWindDir" class="factor-sublabel">Direction: --</div>
+                </div>
+                <div class="factor-mini-gauge">
+                  <div id="windMiniBar" class="mini-bar wind-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Rainfall Probability -->
+              <div class="neuro-card factor-card">
+                <div class="factor-icon-container rain-gradient">
+                  <img src="{{ url_for('static', filename='images/humidity.png') }}" alt="Humidity" class="factor-icon-img">
+                </div>
+                <div class="factor-content">
+                  <div id="factorHumidity" class="factor-value">--</div>
+                  <div class="factor-label">Humidity</div>
+                  <div id="factorDewPoint" class="factor-sublabel">Dew Point: --</div>
+                </div>
+                <div class="factor-mini-gauge">
+                  <div id="humidityMiniBar" class="mini-bar humidity-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Storm / Alert Risk -->
+              <div class="neuro-card factor-card">
+                <div class="factor-icon-container alert-gradient">
+                  <img src="{{ url_for('static', filename='images/uv-index.png') }}" alt="UV Index" class="factor-icon-img">
+                </div>
+                <div class="factor-content">
+                  <div id="factorUV" class="factor-value">--</div>
+                  <div class="factor-label">UV Index</div>
+                  <div id="factorAlerts" class="factor-sublabel">Risk Level: --</div>
+                </div>
+                <div class="factor-mini-gauge">
+                  <div id="uvMiniBar" class="mini-bar uv-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Weather Summary Card -->
+            <div class="neuro-card weather-summary-card">
+              <h3><img src="{{ url_for('static', filename='images/pie-chart-for-inside-stats.png') }}" alt="Stats" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;"> Complete Weather Overview</h3>
+              <div id="travelWeatherDetails" class="weather-details-grid"></div>
+            </div>
+
+            <!-- Warnings Card (if any) -->
+            <div id="travelWarningsCard" class="neuro-card warnings-card" style="display: none;">
+              <div class="warnings-header">
+                <span class="warning-icon">⚠️</span>
+                <h3>Travel Warnings</h3>
+              </div>
+              <ul id="travelWarnings" class="warnings-list"></ul>
+            </div>
+
+            <!-- Recommendations Card -->
+            <div class="neuro-card recommendations-card">
+              <div class="recommendations-header">
+                <span class="rec-icon">💡</span>
+                <h3>Smart Travel Tips</h3>
+              </div>
+              <ul id="travelRecommendations" class="recommendations-list"></ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- LIGHTNING & THUNDER MONITOR -->
+      <section id="lightningView" class="view-section" style="display:none;">
+        <div class="lightning-header">
+          <h2 class="view-title">⚡ Lightning & Thunder Activity</h2>
+          <p class="lightning-subtitle">Real-time detection powered by Tomorrow.io</p>
+        </div>
+
+        <!-- Location Control -->
+        <div class="lightning-location-card card">
+          <div class="location-controls">
+            <input type="text" id="lightningLocationInput" class="location-input" placeholder="Enter city or coordinates..." value="London">
+            <button id="lightningSearchBtn" class="btn-primary">Search</button>
+            <button id="lightningMyLocationBtn" class="btn-secondary">📍 Use My Location</button>
+          </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="lightning-status-card card">
+          <div class="status-header">
+            <h3>Current Status</h3>
+            <span id="lightningLastUpdate" class="last-update">Just now</span>
+          </div>
+          <div class="status-indicator">
+            <div id="lightningStatusBadge" class="status-badge status-safe">
+              <span class="status-icon">✓</span>
+              <span class="status-text">Safe</span>
+            </div>
+            <div id="lightningLocationName" class="status-location">Loading...</div>
+          </div>
+        </div>
+
+        <div class="lightning-grid">
+          <!-- Live Map -->
+          <div class="lightning-map-card card">
+            <div class="card-header">
+              <h3>⚡ Lightning Detection Map</h3>
+              <button id="lightningRefreshBtn" class="btn-refresh" onclick="refreshLightningData()">🔄 Refresh</button>
+            </div>
+            <div id="lightningMap" class="lightning-map"></div>
+            <div id="noLightningMessage" class="no-lightning-message" style="display:none;">
+              <div class="no-lightning-icon">✓</div>
+              <p>No recent lightning strikes detected in this area.</p>
+              <small>The sky is clear - safe conditions</small>
+            </div>
+          </div>
+
+          <!-- Statistics Panel -->
+          <div class="lightning-stats-panel">
+            <!-- Thunderstorm Risk Gauge (NEW) -->
+            <div class="stat-card card">
+              <div class="stat-header">
+                <div class="stat-icon">⚠️</div>
+                <h4>Thunderstorm Risk</h4>
+              </div>
+              <div id="risk-value" class="risk-value-display">0%</div>
+              <div id="thunderstorm-risk-gauge">
+                <div class="risk-fill" style="width: 0%;"></div>
+              </div>
+              <div id="risk-label" class="risk-label-text">LOW RISK</div>
+            </div>
+            
+            <!-- Strike Counter -->
+            <div class="stat-card card lightning-stats-container">
+              <div class="stat-icon">⚡</div>
+              <div class="stat-content">
+                <div class="stat-label">Lightning Strikes</div>
+                <div id="lightningStrikeCount" class="stat-value">0</div>
+                <div class="stat-unit">strikes detected</div>
+              </div>
+            </div>
+
+            <!-- Thunder Risk Gauge -->
+            <div class="stat-card card">
+              <div class="stat-header">
+                <div class="stat-icon">🌩️</div>
+                <h4>Thunderstorm Risk</h4>
+              </div>
+              <div class="risk-gauge-container">
+                <svg class="risk-gauge" viewBox="0 0 200 120">
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                      <stop offset="50%" style="stop-color:#f59e0b;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+                    </linearGradient>
+                  </defs>
+                  <path id="gaugeBackground" d="M 20 100 A 80 80 0 0 1 180 100" 
+                        stroke="#e5e7eb" stroke-width="20" fill="none" stroke-linecap="round"/>
+                  <path id="gaugeFill" d="M 20 100 A 80 80 0 0 1 180 100" 
+                        stroke="url(#gaugeGradient)" stroke-width="20" fill="none" 
+                        stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+                </svg>
+                <div class="gauge-center">
+                  <div id="thunderRiskValue" class="gauge-value">0</div>
+                  <div class="gauge-label">% Risk</div>
+                </div>
+              </div>
+              <div id="thunderRiskLevel" class="risk-level">Low Risk</div>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="stat-card card">
+              <div class="stat-header">
+                <div class="stat-icon">📊</div>
+                <h4>Detection Details</h4>
+              </div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Radius:</span>
+                  <span id="detectionRadius" class="info-value">50 km</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Accuracy:</span>
+                  <span id="detectionAccuracy" class="info-value">High</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Data Source:</span>
+                  <span class="info-value">Tomorrow.io</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Safety Tips -->
+        <div class="lightning-tips-card card">
+          <h3>⚠️ Safety Guidelines</h3>
+          <div class="tips-grid">
+            <div class="tip-item">
+              <span class="tip-icon">🏠</span>
+              <p>Seek shelter indoors immediately if lightning is detected nearby</p>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">📱</span>
+              <p>Avoid using electronic devices connected to outlets during storms</p>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">🌳</span>
+              <p>Stay away from tall trees, metal objects, and open fields</p>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">⏱️</span>
+              <p>Wait 30 minutes after the last thunder before resuming outdoor activities</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section id="settingsView" class="view-section" style="display:none;">
+        <h2 class="view-title">⚙️ Settings & Personalization</h2>
+        <p class="view-subtitle">Customize your weather experience</p>
+        
+        <div class="settings-grid">
+          
+          <!-- Temperature & Units Card -->
+          <div class="card settings-card">
+            <div class="card-header">📏 Units & Measurements</div>
+            
+            <div class="setting-row">
+              <label class="setting-label">Temperature</label>
+              <div class="radio-group-horizontal">
+                <label class="radio-pill">
+                  <input type="radio" name="tempUnit" value="C" checked>
+                  <span>Celsius (°C)</span>
+                </label>
+                <label class="radio-pill">
+                  <input type="radio" name="tempUnit" value="F">
+                  <span>Fahrenheit (°F)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Wind Speed</label>
+              <select id="windUnit" class="setting-select">
+                <option value="kmh" selected>km/h (Kilometers per hour)</option>
+                <option value="mph">mph (Miles per hour)</option>
+                <option value="ms">m/s (Meters per second)</option>
+                <option value="knots">knots (Nautical)</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Rainfall & Snow</label>
+              <div class="radio-group-horizontal">
+                <label class="radio-pill">
+                  <input type="radio" name="rainUnit" value="mm" checked>
+                  <span>mm</span>
+                </label>
+                <label class="radio-pill">
+                  <input type="radio" name="rainUnit" value="cm">
+                  <span>cm</span>
+                </label>
+                <label class="radio-pill">
+                  <input type="radio" name="rainUnit" value="in">
+                  <span>in</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Atmospheric Pressure</label>
+              <select id="pressureUnit" class="setting-select">
+                <option value="hpa" selected>hPa (Hectopascals)</option>
+                <option value="inhg">inHg (Inches of Mercury)</option>
+                <option value="mmhg">mmHg (Millimeters of Mercury)</option>
+                <option value="mbar">mbar (Millibars)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Appearance & Theme Card -->
+          <div class="card settings-card">
+            <div class="card-header">🎨 Appearance & Theme</div>
+            
+            <div class="setting-row">
+              <label class="setting-label">Theme Mode</label>
+              <div class="theme-selector">
+                <label class="theme-card">
+                  <input type="radio" name="theme" value="light" checked>
+                  <span class="theme-icon">☀️</span>
+                  <span class="theme-label">Light</span>
+                </label>
+                <label class="theme-card">
+                  <input type="radio" name="theme" value="dark">
+                  <span class="theme-icon">🌙</span>
+                  <span class="theme-label">Dark</span>
+                </label>
+                <label class="theme-card">
+                  <input type="radio" name="theme" value="auto">
+                  <span class="theme-icon">🌗</span>
+                  <span class="theme-label">Auto</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Accent Color</label>
+              <div class="color-palette">
+                <label class="color-swatch" style="background: #667eea;" title="Purple">
+                  <input type="radio" name="accentColor" value="#667eea" checked>
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #4299e1;" title="Blue">
+                  <input type="radio" name="accentColor" value="#4299e1">
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #48bb78;" title="Green">
+                  <input type="radio" name="accentColor" value="#48bb78">
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #ed8936;" title="Orange">
+                  <input type="radio" name="accentColor" value="#ed8936">
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #f56565;" title="Red">
+                  <input type="radio" name="accentColor" value="#f56565">
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #f6ad55;" title="Yellow">
+                  <input type="radio" name="accentColor" value="#f6ad55">
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #38b2ac;" title="Teal">
+                  <input type="radio" name="accentColor" value="#38b2ac">
+                  <span class="check-mark">✓</span>
+                </label>
+                <label class="color-swatch" style="background: #5a67d8;" title="Indigo">
+                  <input type="radio" name="accentColor" value="#5a67d8">
+                  <span class="check-mark">✓</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-label">High Contrast</span>
+                  <span class="toggle-desc">Better visibility for text and icons</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="highContrast">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications & Alerts Card -->
+          <div class="card settings-card">
+            <div class="card-header">🔔 Notifications & Alerts</div>
+            
+            <div class="setting-row master-toggle">
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-label">Enable All Notifications</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="enableAllNotifications" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div class="notifications-list">
+              <div class="toggle-row">
+                <span class="notification-icon">🌧️</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Rain Starting Soon</span>
+                  <span class="toggle-desc">30-min advance warning</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertRainSoon" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">⚡</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Lightning Nearby</span>
+                  <span class="toggle-desc">Storm activity within 10km</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertLightning" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">🌪️</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Severe Storm Alerts</span>
+                  <span class="toggle-desc">Thunderstorms & high winds</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertStorm" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">😷</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Air Quality Alerts</span>
+                  <span class="toggle-desc">When AQI exceeds threshold</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertAQI" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">📊</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Daily Weather Summary</span>
+                  <span class="toggle-desc">Morning briefing at 8:00 AM</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertDaily" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">🌡️</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Temperature Drops</span>
+                  <span class="toggle-desc">Sudden changes (>5°C/9°F)</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertTempDrop" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">✈️</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Travel Safety Warnings</span>
+                  <span class="toggle-desc">Poor conditions for travel</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertTravel" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="notification-icon">❄️</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Frost & Freeze Alerts</span>
+                  <span class="toggle-desc">Overnight freezing warnings</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="alertFrost" class="sub-notification" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div class="setting-row">
+              <div class="toggle-row">
+                <span class="notification-icon">🔊</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Notification Sound</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="notificationSound">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div class="setting-row">
+              <div class="toggle-row">
+                <span class="notification-icon">🌙</span>
+                <div class="toggle-info">
+                  <span class="toggle-label">Quiet Hours</span>
+                  <span class="toggle-desc">Silence non-critical alerts</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="enableQuietHours">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="quiet-hours-inputs" id="quietHoursInputs" style="display: none;">
+              <div class="time-picker-row">
+                <div class="time-picker-group">
+                  <label class="time-label">Start Time</label>
+                  <input type="time" id="quietStartTime" value="22:00" class="time-input">
+                </div>
+                <div class="time-picker-group">
+                  <label class="time-label">End Time</label>
+                  <input type="time" id="quietEndTime" value="07:00" class="time-input">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manage Cities Card -->
+          <div class="card settings-card">
+            <div class="card-header">📍 Saved Locations</div>
+            
+            <div class="add-city-section">
+              <input type="text" id="addCityInput" placeholder="🔍 Search city or location..." class="city-search-input">
+              <button id="addCityBtn" class="add-city-btn-new">+ Add</button>
+              <span class="city-limit">0/10 cities</span>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div id="citiesList" class="cities-list-new"></div>
+            
+            <div class="empty-cities" id="emptyCitiesMessage">
+              <span class="empty-icon">📍</span>
+              <p>No saved cities yet. Add your first location above!</p>
+            </div>
+          </div>
+
+          <!-- Dashboard Personalization Card -->
+          <div class="card settings-card">
+            <div class="card-header">🏠 Dashboard & Navigation</div>
+            
+            <div class="setting-row">
+              <label class="setting-label">Default Home Screen</label>
+              <div class="radio-group-vertical">
+                <label class="radio-option">
+                  <input type="radio" name="defaultScreen" value="today" checked>
+                  <span class="option-icon">🏠</span>
+                  <span class="option-text">Today's Weather</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="defaultScreen" value="hourly">
+                  <span class="option-icon">⏰</span>
+                  <span class="option-text">Hourly Forecast</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="defaultScreen" value="weekly">
+                  <span class="option-icon">📅</span>
+                  <span class="option-text">7-Day Forecast</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="defaultScreen" value="map">
+                  <span class="option-icon">🗺️</span>
+                  <span class="option-text">Weather Map</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="defaultScreen" value="alerts">
+                  <span class="option-icon">🔔</span>
+                  <span class="option-text">Alerts Dashboard</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label class="setting-label">Preferred Map View</label>
+              <div class="map-layer-selector">
+                <label class="map-layer-btn">
+                  <input type="radio" name="defaultMapLayer" value="rain" checked>
+                  <span class="layer-icon">🌧️</span>
+                  <span class="layer-label">Rain</span>
+                </label>
+                <label class="map-layer-btn">
+                  <input type="radio" name="defaultMapLayer" value="wind">
+                  <span class="layer-icon">💨</span>
+                  <span class="layer-label">Wind</span>
+                </label>
+                <label class="map-layer-btn">
+                  <input type="radio" name="defaultMapLayer" value="lightning">
+                  <span class="layer-icon">⚡</span>
+                  <span class="layer-label">Lightning</span>
+                </label>
+                <label class="map-layer-btn">
+                  <input type="radio" name="defaultMapLayer" value="temp">
+                  <span class="layer-icon">🌡️</span>
+                  <span class="layer-label">Temp</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-label">Animated Weather Layers</span>
+                  <span class="toggle-desc">Moving rain clouds and wind patterns</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="mapAnimations">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <span class="toggle-label">Auto-Refresh Data</span>
+                  <span class="toggle-desc">Update weather every 5 minutes</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="autoRefresh" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Floating Save Button -->
+        <button id="saveSettingsBtn" class="save-settings-fab" style="display: none;">
+          <span class="fab-icon">✓</span>
+          <span class="fab-text">Save</span>
+        </button>
+      </section>
+
+      <footer class="footer">
+        <small>Weather Dashboard © 2025</small>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Weather Alert Settings Modal -->
+  <div id="weatherAlertModal" class="weather-alert-modal">
+    <div class="weather-alert-modal-overlay" onclick="closeWeatherAlertModal()"></div>
+    <div class="weather-alert-modal-container">
+      <div class="weather-alert-modal-header">
+        <div class="modal-title-section">
+          <h2>⚡ Weather Alert Settings</h2>
+          <p class="modal-subtitle">Get notified when weather conditions exceed your custom thresholds</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeWeatherAlertModal()" title="Close">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="weather-alert-modal-body">
+        <!-- Temperature Alert -->
+        <div class="alert-config-card">
+          <div class="alert-config-header">
+            <div class="alert-config-icon temp-icon">🌡️</div>
+            <div class="alert-config-info">
+              <h3>Temperature Alert</h3>
+              <p>Get notified when temperature exceeds your limit</p>
+            </div>
+            <label class="modern-toggle">
+              <input type="checkbox" id="tempAlertEnabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="alert-config-input">
+            <input type="number" id="tempThresholdInput" class="threshold-input" placeholder="30" step="0.5" min="-50" max="60">
+            <span class="input-unit">°C</span>
+          </div>
+          <div class="alert-hint">Example: Get alerted when temperature reaches 35°C or higher</div>
+        </div>
+
+        <!-- Wind Speed Alert -->
+        <div class="alert-config-card">
+          <div class="alert-config-header">
+            <div class="alert-config-icon wind-icon">💨</div>
+            <div class="alert-config-info">
+              <h3>Wind Speed Alert</h3>
+              <p>Get notified when wind speed exceeds your limit</p>
+            </div>
+            <label class="modern-toggle">
+              <input type="checkbox" id="windAlertEnabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="alert-config-input">
+            <input type="number" id="windThresholdInput" class="threshold-input" placeholder="15" step="0.5" min="0" max="50">
+            <span class="input-unit">m/s</span>
+          </div>
+          <div class="alert-hint">Example: Get alerted when wind speed reaches 20 m/s or higher</div>
+        </div>
+
+        <!-- Rainfall Alert -->
+        <div class="alert-config-card">
+          <div class="alert-config-header">
+            <div class="alert-config-icon rain-icon">🌧️</div>
+            <div class="alert-config-info">
+              <h3>Rainfall Alert</h3>
+              <p>Get notified during heavy rainfall</p>
+            </div>
+            <label class="modern-toggle">
+              <input type="checkbox" id="rainAlertEnabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="alert-config-input">
+            <input type="number" id="rainThresholdInput" class="threshold-input" placeholder="10" step="0.5" min="0" max="100">
+            <span class="input-unit">mm/h</span>
+          </div>
+          <div class="alert-hint">Example: Get alerted when rainfall intensity reaches 15 mm/h or higher</div>
+        </div>
+
+        <!-- Lightning Alert -->
+        <div class="alert-config-card">
+          <div class="alert-config-header">
+            <div class="alert-config-icon lightning-icon">⚡</div>
+            <div class="alert-config-info">
+              <h3>Lightning & Thunderstorm Alert</h3>
+              <p>Get notified when thunderstorms are detected</p>
+            </div>
+            <label class="modern-toggle">
+              <input type="checkbox" id="lightningAlertEnabled">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="alert-hint">Automatically alerts when thunderstorm conditions are present</div>
+        </div>
+
+        <!-- AQI Alert -->
+        <div class="alert-config-card">
+          <div class="alert-config-header">
+            <div class="alert-config-icon aqi-icon">😷</div>
+            <div class="alert-config-info">
+              <h3>Air Quality Alert (AQI)</h3>
+              <p>Get notified when air quality deteriorates</p>
+            </div>
+            <label class="modern-toggle">
+              <input type="checkbox" id="aqiAlertEnabled">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="alert-config-input">
+            <input type="number" id="aqiThresholdInput" class="threshold-input" placeholder="100" step="1" min="0" max="500">
+            <span class="input-unit">AQI</span>
+          </div>
+          <div class="alert-hint">Example: Get alerted when AQI reaches 150 (unhealthy for sensitive groups)</div>
+        </div>
+      </div>
+
+      <div class="weather-alert-modal-footer">
+        <button class="modal-btn modal-btn-secondary" onclick="closeWeatherAlertModal()">Cancel</button>
+        <button class="modal-btn modal-btn-primary" onclick="saveWeatherAlerts()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Save Alerts
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Notification Container (for slide-in notifications) -->
+  <div id="alertNotificationContainer" class="alert-notification-container"></div>
+
+  <!-- Floating Alert Settings Button -->
+  <button class="floating-alert-btn" onclick="openWeatherAlertModal()" title="Configure Weather Alerts">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
+    <span class="floating-alert-badge" id="floatingAlertBadge" style="display: none;">0</span>
+  </button>
+
+  <!-- AI Weather Bot -->
+  <div id="aiBot" class="ai-bot">
+    <div id="botBubble" class="bot-bubble">
+      <img src="{{ url_for('static', filename='images/ai-bot.png') }}" alt="AI Bot" class="bot-icon-img">
+    </div>
+    
+    <div id="botChat" class="bot-chat" style="display: none;">
+      <div class="bot-chat-header">
+        <h3><img src="{{ url_for('static', filename='images/ai-bot.png') }}" alt="AI" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;"> AI Weather Assistant</h3>
+        <button id="closeBotBtn" class="close-bot-btn">✕</button>
+      </div>
+      
+      <div id="chatMessages" class="chat-messages">
+        <div class="bot-message">
+          <p>👋 Hi! I'm your AI Weather Assistant.<br>Ask me anything about current weather, forecasts, alerts, travel safety, or city comparisons!</p>
+        </div>
+      </div>
+      
+      <div class="chat-input-area">
+        <input 
+          type="text" 
+          id="botInput" 
+          placeholder="Ask me about weather..."
+          autocomplete="off"
+        >
+        <button id="sendBotBtn" class="send-btn">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS for Lightning Map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet MarkerCluster JS -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <!-- Leaflet Heat Plugin JS -->
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- App JS (loads first to define window.initMap) -->
+  <script src="{{ url_for('static', filename='js/script.js') }}?v=29"></script>
+  
+  <!-- Google Maps API (loads after, calls window.initMap when ready) -->
+  <script defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&callback=initMap&libraries=places"></script>
+</body>
+</html>

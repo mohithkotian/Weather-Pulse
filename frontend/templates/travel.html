@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}Travel Safety Advisor - Weather Intelligence{% endblock %}
+
+{% block content %}
+<div class="travel-container">
+    <div class="page-header">
+        <h1>
+            <img src="/static/images/travel.png" alt="Travel Icon" style="height: 26px; width: 26px; vertical-align: middle; margin-right: 8px;">
+            Travel Safety Advisor
+        </h1>
+        <p>Check weather conditions and safety for your upcoming trips</p>
+    </div>
+
+    <div class="travel-content">
+        <!-- Input Form -->
+        <div class="travel-form-card">
+            <h2>Plan Your Trip</h2>
+            <form id="travelForm">
+                <div class="form-group">
+                    <label for="destination">Destination City</label>
+                    <input 
+                        type="text" 
+                        id="destination" 
+                        name="destination" 
+                        placeholder="e.g., London, Paris, Tokyo"
+                        required
+                    >
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dateFrom">From Date</label>
+                        <input 
+                            type="date" 
+                            id="dateFrom" 
+                            name="dateFrom"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateTo">To Date</label>
+                        <input 
+                            type="date" 
+                            id="dateTo" 
+                            name="dateTo"
+                        >
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-icon">🔍</span>
+                    Check Travel Safety
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Area -->
+        <div id="resultsArea" class="results-area" style="display: none;">
+            <!-- Safety Score Card -->
+            <div class="safety-score-card">
+                <div class="score-header">
+                    <h2>Safety Assessment</h2>
+                    <div id="destinationName" class="destination-name"></div>
+                </div>
+                
+                <div class="score-display">
+                    <div class="score-circle">
+                        <svg width="150" height="150">
+                            <circle 
+                                cx="75" 
+                                cy="75" 
+                                r="65" 
+                                fill="none" 
+                                stroke="#e0e0e0" 
+                                stroke-width="12"
+                            />
+                            <circle 
+                                id="scoreCircle"
+                                cx="75" 
+                                cy="75" 
+                                r="65" 
+                                fill="none" 
+                                stroke="#4CAF50" 
+                                stroke-width="12"
+                                stroke-linecap="round"
+                                stroke-dasharray="408.4"
+                                stroke-dashoffset="408.4"
+                                transform="rotate(-90 75 75)"
+                            />
+                        </svg>
+                        <div class="score-text">
+                            <span id="scoreValue" class="score-number">0</span>
+                            <span class="score-label">/100</span>
+                        </div>
+                    </div>
+                    
+                    <div class="score-verdict">
+                        <div id="safetyVerdict" class="verdict-badge">Analyzing...</div>
+                        <p id="safetyMessage" class="verdict-message"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warnings Section -->
+            <div id="warningsSection" class="warnings-section" style="display: none;">
+                <h3>⚠️ Weather Warnings</h3>
+                <div id="warningsList" class="warnings-list"></div>
+            </div>
+
+            <!-- Recommendations Section -->
+            <div class="recommendations-section">
+                <h3>📋 Travel Recommendations</h3>
+                <div id="recommendationsList" class="recommendations-list"></div>
+            </div>
+
+            <!-- Packing Suggestions -->
+            <div class="packing-section">
+                <h3>🎒 Packing Suggestions</h3>
+                <div id="packingList" class="packing-grid">
+                    <div class="packing-item">☂️ Umbrella</div>
+                    <div class="packing-item">🧥 Light Jacket</div>
+                    <div class="packing-item">👟 Comfortable Shoes</div>
+                    <div class="packing-item">🕶️ Sunglasses</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing weather conditions...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+    </div>
+</div>
+
+<style>
+.travel-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.travel-content {
+    display: grid;
+    gap: 2rem;
+}
+
+/* Form Styling */
+.travel-form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.travel-form-card h2 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-icon {
+    font-size: 1.3rem;
+}
+
+/* Results Area */
+.results-area {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.safety-score-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.score-header {
+    margin-bottom: 2rem;
+}
+
+.destination-name {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    margin-top: 0.5rem;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.score-circle {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.score-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.score-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.score-label {
+    font-size: 1rem;
+    color: #7f8c8d;
+}
+
+.score-verdict {
+    text-align: center;
+}
+
+.verdict-badge {
+    display: inline-block;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.verdict-badge.safe {
+    background: #d4edda;
+    color: #155724;
+}
+
+.verdict-badge.caution {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.verdict-badge.unsafe {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.verdict-message {
+    color: #7f8c8d;
+    max-width: 300px;
+}
+
+/* Warnings Section */
+.warnings-section {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.warnings-section h3 {
+    margin-bottom: 1rem;
+    color: #856404;
+}
+
+.warnings-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.warning-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 3px solid #ffc107;
+}
+
+/* Recommendations Section */
+.recommendations-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.recommendations-section h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.recommendations-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.recommendation-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #3498db;
+}
+
+/* Packing Section */
+.packing-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.packing-section h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.packing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.packing-item {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    transition: transform 0.2s;
+}
+
+.packing-item:hover {
+    transform: translateY(-2px);
+    background: #e9ecef;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #dc3545;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .score-display {
+        flex-direction: column;
+        gap: 2rem;
+    }
+    
+    .packing-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+
+<script>
+document.getElementById('travelForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const destination = document.getElementById('destination').value;
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    
+    // Show loading, hide results and errors
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('resultsArea').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/travel-check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                destination: destination,
+                date_from: dateFrom,
+                date_to: dateTo
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to check travel safety');
+        }
+        
+        const data = await response.json();
+        displayResults(data);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorMessage').textContent = 'Failed to assess travel safety. Please try again.';
+        document.getElementById('errorMessage').style.display = 'block';
+    }
+});
+
+function displayResults(data) {
+    // Hide loading
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('resultsArea').style.display = 'grid';
+    
+    // Update destination name
+    document.getElementById('destinationName').textContent = data.destination;
+    
+    // Update safety score
+    const score = data.score || 0;
+    document.getElementById('scoreValue').textContent = score;
+    
+    // Animate score circle
+    const circle = document.getElementById('scoreCircle');
+    const circumference = 408.4;
+    const offset = circumference - (score / 100) * circumference;
+    circle.style.strokeDashoffset = offset;
+    
+    // Set circle color based on score
+    if (score >= 80) {
+        circle.style.stroke = '#4CAF50';
+    } else if (score >= 60) {
+        circle.style.stroke = '#FFC107';
+    } else {
+        circle.style.stroke = '#F44336';
+    }
+    
+    // Update verdict
+    const verdictBadge = document.getElementById('safetyVerdict');
+    verdictBadge.textContent = data.safe ? '✓ Safe to Travel' : '⚠ Travel with Caution';
+    verdictBadge.className = 'verdict-badge ' + (score >= 80 ? 'safe' : score >= 60 ? 'caution' : 'unsafe');
+    
+    document.getElementById('safetyMessage').textContent = data.message;
+    
+    // Display warnings
+    const warningsSection = document.getElementById('warningsSection');
+    const warningsList = document.getElementById('warningsList');
+    
+    if (data.warnings && data.warnings.length > 0) {
+        warningsSection.style.display = 'block';
+        warningsList.innerHTML = data.warnings.map(warning => 
+            `<div class="warning-item">${warning}</div>`
+        ).join('');
+    } else {
+        warningsSection.style.display = 'none';
+    }
+    
+    // Display recommendations
+    const recommendationsList = document.getElementById('recommendationsList');
+    recommendationsList.innerHTML = data.recommendations.map(rec => 
+        `<div class="recommendation-item">${rec}</div>`
+    ).join('');
+}
+
+// Set min date to today
+document.getElementById('dateFrom').min = new Date().toISOString().split('T')[0];
+document.getElementById('dateTo').min = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

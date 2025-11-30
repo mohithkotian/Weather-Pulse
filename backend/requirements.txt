@@ -1,0 +1,21 @@
+# Flask Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# HTTP Requests
+requests==2.31.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Geocoding (optional for fallback)
+geopy==2.4.1
+
+# Map Generation (optional)
+folium==0.15.1
+
+# WSGI Server (for production)
+gunicorn==21.2.0
+
+# Terminal Colors (optional for CLI mode)
+colorama==0.4.6

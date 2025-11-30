@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weatherly — Dashboard</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='images/weather-app-logo.png') }}" alt="Weatherly">
+      </div>
+      <nav>
+        <button class="icon-btn active" data-view="dashboard" title="Dashboard">
+          <img src="{{ url_for('static', filename='images/home.png') }}" alt="Home">
+        </button>
+        <button class="icon-btn" data-view="analytics" title="Analytics">
+          <img src="{{ url_for('static', filename='images/stats.png') }}" alt="Stats">
+        </button>
+        <button class="icon-btn" data-view="map" title="Weather Map">
+          <img src="{{ url_for('static', filename='images/pin.png') }}" alt="Location">
+        </button>
+        <button class="icon-btn" data-view="alerts" title="Alerts & Reports">
+          <img src="{{ url_for('static', filename='images/list.png') }}" alt="List">
+        </button>
+        <button class="icon-btn" data-view="planner" title="Forecast Planner">
+          <img src="{{ url_for('static', filename='images/calendar.png') }}" alt="Calendar">
+        </button>
+        <button class="icon-btn" data-view="settings" title="Settings">
+          <img src="{{ url_for('static', filename='images/gear.png') }}" alt="Settings">
+        </button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <div class="title">
+          <h1>Weather Tracker</h1>
+          <div id="date" class="subtitle"></div>
+        </div>
+
+        <div class="search-row">
+          <input id="cityInput" type="search" placeholder="Search city, e.g. London" />
+          <button id="searchBtn" title="Search">
+            <img src="{{ url_for('static', filename='images/search-interface-symbol.png') }}" alt="Search">
+          </button>
+          
+          <!-- Weather Notification Bell -->
+          <div class="notification-bell-container">
+            <button id="notificationBell" class="notification-bell" title="Weather Alerts">
+              <img id="bellIcon" src="{{ url_for('static', filename='images/bell-deactive.svg') }}" alt="Notifications">
+              <span id="notificationBadge" class="notification-badge" style="display: none;"></span>
+            </button>
+            
+            <!-- Notification Drawer -->
+            <div id="notificationDrawer" class="notification-drawer" style="display: none;">
+              <div class="drawer-header">
+                <h3>Weather Alerts</h3>
+                <span id="alertCount" class="alert-count"></span>
+              </div>
+              <div id="alertsContent" class="drawer-content"></div>
+              <div class="drawer-footer">
+                <p id="lastUpdated" class="last-updated"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <!-- Current & Trend -->
+        <div class="card current-card">
+          <div class="current-header">
+            <div class="current-date">
+              <div id="dayName" class="day-name">—</div>
+              <div id="fullDate" class="full-date">—</div>
+            </div>
+            <div id="locationBadge" class="location-badge">
+              <img src="{{ url_for('static', filename='images/pin.png') }}" alt="Location" class="pin-icon">
+              <span id="countryName">—</span>
+            </div>
+          </div>
+          
+          <div class="current-body">
+            <div class="weather-icon-container">
+              <img id="conditionIcon" src="{{ url_for('static', filename='images/cloudy.png') }}" alt="Weather" class="weather-icon">
+            </div>
+            
+            <div class="current-details">
+              <div id="tempBig" class="temp-big">--°C</div>
+              <div class="temp-range">
+                <span class="range-label">High:</span> <span id="high" class="range-value">--°</span>
+                <span class="range-label">Low:</span> <span id="low" class="range-value">--°</span>
+              </div>
+              <div id="desc" class="condition-text">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card trend-card">
+          <div class="card-header">Temperature Trend</div>
+          <canvas id="tempChart" height="160"></canvas>
+        </div>
+
+        <!-- Forecast summary -->
+        <div class="card forecast-card">
+          <div class="card-header">Forecast Summary</div>
+          <div id="forecastList" class="forecast-list">
+            <!-- JS fills -->
+          </div>
+        </div>
+
+        <!-- Today details -->
+        <div class="card today-card">
+          <div class="card-header">Today</div>
+          <div class="today-grid">
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/sun.png') }}" alt="Sunrise" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Sunrise</div>
+                <div id="sunrise" class="big">--:--</div>
+              </div>
+            </div>
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/night.png') }}" alt="Sunset" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Sunset</div>
+                <div id="sunset" class="big">--:--</div>
+              </div>
+            </div>
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/cloudy.png') }}" alt="Humidity" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Humidity</div>
+                <div id="humidity" class="big">--%</div>
+              </div>
+            </div>
+            <div class="today-item">
+              <img src="{{ url_for('static', filename='images/windy.png') }}" alt="Wind" class="today-icon">
+              <div class="today-content">
+                <div class="small-title">Wind</div>
+                <div id="wind" class="big">-- m/s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Regional map + table -->
+        <div class="card map-card">
+          <div class="card-header">Temperature in various regions</div>
+          <div id="map" class="map"></div>
+          <div id="regionsTable" class="regions-table">
+            <!-- regions list -->
+          </div>
+        </div>
+
+        <!-- Precipitation -->
+        <div class="card precip-card">
+          <div class="card-header">Precipitation Levels</div>
+          <canvas id="precipChart" height="140"></canvas>
+        </div>
+
+        <!-- Alerts -->
+        <div class="card alerts-card">
+          <div class="card-header">Weather Alerts</div>
+          <div id="alertsList" class="alerts-list">
+            <div class="no-alert">No alerts</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS VIEW -->
+      <section id="analyticsView" class="view-section" style="display:none;">
+        <h2 class="view-title">Weather Analytics & Climate Trends</h2>
+        
+        <div class="analytics-grid">
+          <div class="card">
+            <div class="card-header">Temperature Variations (7 Days)</div>
+            <canvas id="tempVariationChart" height="180"></canvas>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">Rainfall Trends</div>
+            <canvas id="rainfallChart" height="180"></canvas>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">Air Quality Index (AQI)</div>
+            <div id="aqiDisplay" class="aqi-display">
+              <div class="aqi-value">--</div>
+              <div class="aqi-label">Loading...</div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">UV Index</div>
+            <div id="uvDisplay" class="uv-display">
+              <div class="uv-value">--</div>
+              <div class="uv-label">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAP VIEW -->
+      <section id="mapView" class="view-section" style="display:none;">
+        <h2 class="view-title">Interactive Weather Map</h2>
+        <div class="card map-view-card">
+          <div id="interactiveMap" class="interactive-map"></div>
+          <div id="savedLocations" class="saved-locations">
+            <h3>Saved Locations</h3>
+            <div id="savedLocationsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALERTS VIEW -->
+      <section id="alertsView" class="view-section" style="display:none;">
+        <h2 class="view-title">Weather Alerts & Reports</h2>
+        <div id="alertsContent" class="alerts-content">
+          <div class="card">
+            <div class="card-header">Active Weather Alerts</div>
+            <div id="activeAlerts" class="active-alerts-list">
+              <div class="no-alert">No active alerts</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLANNER VIEW -->
+      <section id="plannerView" class="view-section" style="display:none;">
+        <h2 class="view-title">7-Day Forecast & Trip Planner</h2>
+        <div class="planner-grid">
+          <div class="card forecast-detail-card">
+            <div class="card-header">Day-by-Day Forecast</div>
+            <div id="detailedForecast" class="detailed-forecast"></div>
+          </div>
+          
+          <div class="card trip-planner-card">
+            <div class="card-header">Plan Your Event</div>
+            <div class="trip-planner">
+              <label for="eventDate">Select Date:</label>
+              <input type="date" id="eventDate" class="date-input">
+              <button id="checkWeatherBtn" class="check-weather-btn">Check Weather</button>
+              <div id="eventWeather" class="event-weather"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section id="settingsView" class="view-section" style="display:none;">
+        <h2 class="view-title">Settings & Personalization</h2>
+        <div class="settings-grid">
+          <div class="card">
+            <div class="card-header">Temperature Unit</div>
+            <div class="setting-option">
+              <label>
+                <input type="radio" name="tempUnit" value="C" checked> Celsius (°C)
+              </label>
+              <label>
+                <input type="radio" name="tempUnit" value="F"> Fahrenheit (°F)
+              </label>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">Theme</div>
+            <div class="setting-option">
+              <label>
+                <input type="radio" name="theme" value="light" checked> Light Mode
+              </label>
+              <label>
+                <input type="radio" name="theme" value="dark"> Dark Mode
+              </label>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">Notifications</div>
+            <div class="setting-option">
+              <label>
+                <input type="checkbox" id="enableNotifications"> Enable Weather Alerts
+              </label>
+              <label>
+                <input type="checkbox" id="enableDailyForecast"> Daily Forecast Summary
+              </label>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">Manage Cities</div>
+            <div id="manageCities" class="manage-cities">
+              <input type="text" id="addCityInput" placeholder="Add city..." class="city-input">
+              <button id="addCityBtn" class="add-city-btn">Add</button>
+              <div id="citiesList" class="cities-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <small>Design inspired by Weatherly • Built by you</small>
+      </footer>
+    </main>
+  </div>
+
+  <!-- App JS -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

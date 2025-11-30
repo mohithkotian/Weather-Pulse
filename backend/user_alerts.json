@@ -1,0 +1,41 @@
+{
+  "default_user": {
+    "thresholds": {
+      "lightning": {
+        "value": 1.0,
+        "enabled": true,
+        "created_at": "2025-11-24T14:45:32.410473",
+        "last_updated": "2025-11-24T14:45:32.410487"
+      },
+      "aqi": {
+        "value": 10.0,
+        "enabled": true,
+        "created_at": "2025-11-24T14:45:32.445975",
+        "last_updated": "2025-11-24T14:45:32.445984"
+      },
+      "temperature": {
+        "value": 5.0,
+        "enabled": true,
+        "created_at": "2025-11-24T14:45:32.199912",
+        "last_updated": "2025-11-24T14:45:32.199977"
+      },
+      "wind": {
+        "value": 10.0,
+        "enabled": true,
+        "created_at": "2025-11-24T14:45:32.293405",
+        "last_updated": "2025-11-24T14:45:32.293416"
+      },
+      "rainfall": {
+        "value": 10.0,
+        "enabled": true,
+        "created_at": "2025-11-24T14:45:32.351862",
+        "last_updated": "2025-11-24T14:45:32.351881"
+      }
+    },
+    "location": {
+      "lat": 50.0389186,
+      "lon": 8.8701539,
+      "name": "Wohngebiet Hainhausen-West"
+    }
+  }
+}

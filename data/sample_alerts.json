@@ -1,0 +1,66 @@
+[
+    {
+        "type": "Temperature",
+        "field": "temperature",
+        "value": 38,
+        "threshold": 35,
+        "location": "Phoenix, AZ",
+        "time": "2025-11-19T14:30:00"
+    },
+    {
+        "type": "Wind Speed",
+        "field": "wind_speed",
+        "value": 65,
+        "threshold": 50,
+        "location": "Chicago, IL",
+        "time": "2025-11-19T13:15:00"
+    },
+    {
+        "type": "Rainfall",
+        "field": "rainfall",
+        "value": 75,
+        "threshold": 50,
+        "location": "Seattle, WA",
+        "time": "2025-11-19T12:45:00"
+    },
+    {
+        "type": "Lightning",
+        "field": "lightning_strikes",
+        "value": 25,
+        "threshold": 15,
+        "location": "Tampa, FL",
+        "time": "2025-11-19T11:20:00"
+    },
+    {
+        "type": "Air Quality",
+        "field": "air_quality_index",
+        "value": 185,
+        "threshold": 150,
+        "location": "Los Angeles, CA",
+        "time": "2025-11-19T10:00:00"
+    },
+    {
+        "type": "Temperature",
+        "field": "temperature",
+        "value": 42,
+        "threshold": 35,
+        "location": "Las Vegas, NV",
+        "time": "2025-11-19T09:30:00"
+    },
+    {
+        "type": "Wind Speed",
+        "field": "wind_speed",
+        "value": 72,
+        "threshold": 50,
+        "location": "Kansas City, MO",
+        "time": "2025-11-19T08:45:00"
+    },
+    {
+        "type": "Rainfall",
+        "field": "rainfall",
+        "value": 90,
+        "threshold": 50,
+        "location": "Portland, OR",
+        "time": "2025-11-19T07:15:00"
+    }
+]
